@@ -1,0 +1,1439 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Yoga Class Builder (WIP)</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="theme-color" content="#1B6A57">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Yoga WIP"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..700&family=Figtree:wght@400..700&display=swap">
+<style>
+/* Layout: library of drawn poses on the left, the class sequence on the right; on phones one pane at a time behind a bottom tab bar. */
+:root {
+  --bg: #F0F3EF; --surface: #FFFFFF; --surface2: #F5F7F4; --ink: #1A2420; --ink2: #51605A; --ink3: #7C8A84;
+  --line: #DCE3DD; --line2: #C6D1CA;
+  --accent: #1B6A57; --accent-ink: #FFFFFF; --accent-soft: #DCEEE7; --accent-line: #A9D2C4;
+  --warn: #8F5509; --warn-soft: #F8EBD3; --danger: #AE352B; --danger-soft: #F8E0DD;
+  --fig: #1B6A57; --fig-far: #94C1B3; --ground: #C9D3CC;
+  --c0: #2F7F6B; --c1: #5C64B8; --c2: #C0861F; --c3: #C75E58; --c4: #8C5DA8; --c5: #4A87AA;
+  --font-d: 'Bricolage Grotesque', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-b: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --scrim: rgba(12, 20, 17, .5);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101513; --surface: #1A221F; --surface2: #151C19; --ink: #E7EFEB; --ink2: #A5B4AD; --ink3: #77867F;
+    --line: #2B3732; --line2: #3A4943;
+    --accent: #5CC3A4; --accent-ink: #0B1E18; --accent-soft: #1F3A31; --accent-line: #2F5A4C;
+    --warn: #E4AA5B; --warn-soft: #3A2E17; --danger: #EE7F76; --danger-soft: #3F211E;
+    --fig: #62CBAB; --fig-far: #3C6D5F; --ground: #34423C;
+    --c0: #4CB59A; --c1: #8D95E6; --c2: #E0A94A; --c3: #E58882; --c4: #BC8DD6; --c5: #6DB5DB;
+    --scrim: rgba(0, 0, 0, .6);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101513; --surface: #1A221F; --surface2: #151C19; --ink: #E7EFEB; --ink2: #A5B4AD; --ink3: #77867F;
+  --line: #2B3732; --line2: #3A4943;
+  --accent: #5CC3A4; --accent-ink: #0B1E18; --accent-soft: #1F3A31; --accent-line: #2F5A4C;
+  --warn: #E4AA5B; --warn-soft: #3A2E17; --danger: #EE7F76; --danger-soft: #3F211E;
+  --fig: #62CBAB; --fig-far: #3C6D5F; --ground: #34423C;
+  --c0: #4CB59A; --c1: #8D95E6; --c2: #E0A94A; --c3: #E58882; --c4: #BC8DD6; --c5: #6DB5DB;
+  --scrim: rgba(0, 0, 0, .6);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-b); font-size: 15px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 96px; -webkit-text-size-adjust: 100%;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); background: var(--bg); z-index: 30; }
+body.lock { overflow: hidden; }
+h1, h2, h3, h4 { font-family: var(--font-d); margin: 0; font-weight: 600; letter-spacing: -.01em; text-wrap: balance; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[hidden] { display: none !important; }
+.ic { flex: none; }
+.app { max-width: 1280px; margin: 0 auto; }
+
+/* header */
+.top {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--bg);
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0 10px; flex-wrap: wrap;
+}
+.brand { display: flex; align-items: baseline; gap: 12px; min-width: 0; flex-wrap: wrap; }
+.brand h1 { font-size: 21px; }
+.ss { font-size: 12px; color: var(--ink3); }
+.wip { font: 700 11px/1 var(--font-b); letter-spacing: .08em; padding: 4px 8px; border-radius: 6px; background: var(--warn-soft); color: var(--warn); border: 1px solid var(--warn); align-self: center; }
+.ver { font-size: 11.5px; color: var(--ink3); align-self: center; }
+.ss[data-state="error"] { color: var(--warn); }
+.tabs {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; display: flex; gap: 4px;
+  padding: 8px max(12px, env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+  background: var(--surface); border-top: 1px solid var(--line);
+}
+.tabs button {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 4px; min-height: 48px;
+  background: none; border: 0; border-radius: 10px; font-size: 12px; color: var(--ink2); font-weight: 500;
+}
+.tabs button[aria-current="page"] { color: var(--accent); background: var(--accent-soft); }
+#tabBadge { font-size: 11px; font-variant-numeric: tabular-nums; color: var(--ink2); min-height: 0; }
+#tabBadge:empty { display: none; }
+
+/* panes */
+.panes { display: block; }
+.app[data-view="lib"] .main { display: none; }
+.app:not([data-view="lib"]) .lib { display: none; }
+.app[data-view="saved"] #classView { display: none; }
+.app:not([data-view="saved"]) #savedView { display: none; }
+
+/* library */
+.search { position: relative; display: block; }
+.search .ic { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--ink3); pointer-events: none; }
+.search input {
+  width: 100%; height: 44px; padding: 0 12px 0 38px; border: 1px solid var(--line2); border-radius: 12px; background: var(--surface);
+}
+.chips { display: flex; gap: 6px; overflow-x: auto; padding: 10px 0 4px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chips.wrap { flex-wrap: wrap; overflow: visible; }
+.chip {
+  flex: none; display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; border-radius: 999px;
+  border: 1px solid var(--line2); background: var(--surface); font-size: 13.5px; color: var(--ink);
+}
+.chip.sm { height: 32px; font-size: 13px; }
+.chip.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.sw { width: 9px; height: 9px; border-radius: 3px; display: inline-block; flex: none; }
+.c0 { background: var(--c0); } .c1 { background: var(--c1); } .c2 { background: var(--c2); }
+.c3 { background: var(--c3); } .c4 { background: var(--c4); } .c5 { background: var(--c5); }
+.chip.on .sw { box-shadow: 0 0 0 1.5px var(--accent-ink); }
+.filters { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: flex-start; margin: 6px 0 0; font-size: 13.5px; color: var(--ink2); }
+.filters label { display: flex; align-items: center; gap: 8px; min-height: 32px; }
+.filters select { height: 34px; border: 1px solid var(--line2); border-radius: 8px; background: var(--surface); padding: 0 8px; }
+.avoid { flex: 1 1 220px; }
+.avoid summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; }
+.note { margin: 6px 0 0; font-size: 12.5px; color: var(--ink3); min-height: 0; }
+.note:empty { display: none; }
+.gh { display: flex; align-items: center; gap: 8px; font-size: 15px; margin: 18px 0 8px; }
+.gh .ct { font-family: var(--font-b); font-weight: 400; font-size: 12.5px; color: var(--ink3); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 10px; }
+.pc {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 8px; display: flex; flex-direction: column; gap: 6px; cursor: pointer; min-width: 0;
+}
+.pc:hover { border-color: var(--line2); }
+.pfig { position: relative; background: var(--surface2); border-radius: 9px; aspect-ratio: 4 / 3; overflow: hidden; }
+svg { max-width: 100%; }
+.pfig svg, .th svg, .dfig svg, .tc-fig svg { width: 100%; height: 100%; display: block; }
+svg .near, svg .far { fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: .15; }
+svg .near { stroke: var(--fig); } svg .far { stroke: var(--fig-far); }
+svg .gr { stroke: var(--ground); stroke-width: .06; stroke-linecap: round; }
+svg .hd { fill: var(--fig); }
+.th svg .near, .th svg .far { stroke-width: .26; } .th svg .gr { stroke-width: .12; }
+.mirror svg { transform: scaleX(-1); }
+.inc { position: absolute; top: 6px; left: 6px; font-size: 11px; background: var(--accent); color: var(--accent-ink); padding: 1px 7px; border-radius: 99px; font-weight: 600; }
+.pt { display: flex; flex-direction: column; min-width: 0; padding: 0 2px; }
+.pt b { font-family: var(--font-d); font-weight: 600; font-size: 14.5px; line-height: 1.2; }
+.pt i { font-size: 12px; color: var(--ink2); }
+.pf { display: flex; align-items: center; justify-content: space-between; padding: 0 2px; margin-top: auto; }
+.lv { display: inline-flex; gap: 3px; }
+.lv i { width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid var(--line2); }
+.lv i.on { background: var(--ink2); border-color: var(--ink2); }
+.add {
+  width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; border: 1.5px solid var(--accent); background: transparent; color: var(--accent);
+}
+.add:hover { background: var(--accent); color: var(--accent-ink); }
+.empty-note { color: var(--ink2); padding: 24px 0; }
+
+/* class view */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px; }
+.head { display: grid; gap: 8px; }
+#clsTitle {
+  width: 100%; font-family: var(--font-d); font-weight: 600; font-size: 24px; letter-spacing: -.015em; padding: 4px 0; border: 0; border-bottom: 1.5px solid var(--line); background: transparent; border-radius: 0;
+}
+#clsTitle:focus { outline: none; border-color: var(--accent); }
+.meta { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.meta input, .meta select, .fld input, textarea {
+  width: 100%; height: 40px; padding: 0 10px; border: 1px solid var(--line2); border-radius: 10px; background: var(--surface2);
+}
+.meta select { width: auto; }
+.summary { margin-top: 10px; }
+.tot { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.big { font-family: var(--font-d); font-size: 34px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.of { color: var(--ink2); font-size: 14px; }
+.cnt { color: var(--ink2); font-size: 14px; }
+.meter { height: 8px; border-radius: 99px; background: var(--surface2); border: 1px solid var(--line); overflow: hidden; margin: 6px 0 10px; }
+.meter span { display: block; height: 100%; background: var(--accent); border-radius: 99px; }
+.meter.over span { background: var(--warn); }
+.meter.thin { height: 5px; margin: 6px 0; }
+.mix { display: flex; height: 12px; gap: 2px; border-radius: 4px; overflow: hidden; }
+.mix span { min-width: 4px; }
+.legend { list-style: none; display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 8px 0 0; padding: 0; font-size: 12.5px; color: var(--ink2); }
+.legend li { display: flex; align-items: center; gap: 6px; }
+.legend b { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.minor { font-size: 12.5px; color: var(--ink2); margin: 8px 0 0; }
+.issues { list-style: none; padding: 0; margin: 10px 0 0; display: grid; gap: 6px; }
+.issues li { display: flex; gap: 8px; align-items: flex-start; font-size: 13.5px; padding: 8px 10px; border-radius: 10px; background: var(--surface2); }
+.issues li .ic { margin-top: 2px; }
+.issues li span { flex: 1; min-width: 0; }
+.issues li.warn { background: var(--warn-soft); color: var(--warn); }
+.issues li.ok { color: var(--accent); background: var(--accent-soft); }
+.issues li.info { color: var(--ink2); }
+.mini {
+  flex: none; height: 30px; padding: 0 10px; border-radius: 8px; border: 1px solid currentColor; background: transparent; font-size: 12.5px; font-weight: 600; color: inherit;
+}
+.items-head { display: flex; align-items: baseline; justify-content: space-between; margin: 18px 0 8px; }
+.items-head h2 { font-size: 17px; }
+#items { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.it { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.it.open { border-color: var(--accent-line); }
+.row {
+  width: 100%; display: grid; grid-template-columns: 20px 64px minmax(0, 1fr) auto; gap: 10px; align-items: center; text-align: left;
+  padding: 8px 12px 8px 8px; background: none; border: 0; min-height: 60px;
+}
+.n { font-size: 12px; color: var(--ink3); text-align: center; font-variant-numeric: tabular-nums; }
+.th { width: 64px; height: 48px; background: var(--surface2); border-radius: 8px; overflow: hidden; display: block; }
+.cust { display: grid; place-items: center; height: 100%; color: var(--ink2); }
+.cust.big { height: 140px; }
+.tx { display: flex; flex-direction: column; min-width: 0; }
+.tx b { font-family: var(--font-d); font-weight: 600; font-size: 15.5px; line-height: 1.2; overflow-wrap: anywhere; }
+.sub { font-size: 12.5px; color: var(--ink2); }
+.nt { font-size: 12.5px; color: var(--accent); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tm { display: flex; flex-direction: column; align-items: flex-end; font-variant-numeric: tabular-nums; }
+.tm b { font-size: 16px; font-weight: 600; }
+.tm span { font-size: 11.5px; color: var(--ink3); }
+.ctl { padding: 4px 12px 12px; display: grid; gap: 10px; border-top: 1px dashed var(--line); }
+.ctl-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.ctl-row.acts { gap: 4px; }
+.stepper { display: inline-flex; align-items: center; border: 1px solid var(--line2); border-radius: 12px; overflow: hidden; background: var(--surface2); }
+.stepper button { width: 46px; height: 44px; display: grid; place-items: center; border: 0; background: none; color: var(--accent); }
+.stepper button:active { background: var(--accent-soft); }
+.stepper output { min-width: 96px; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+.stepper small { font-weight: 400; color: var(--ink2); font-size: 11.5px; }
+.tog { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-size: 14px; }
+.tog input { width: 20px; height: 20px; accent-color: var(--accent); }
+.fld { display: grid; gap: 4px; font-size: 12.5px; color: var(--ink2); }
+.ib {
+  width: 40px; height: 40px; display: grid; place-items: center; border-radius: 10px; border: 1px solid transparent; background: none; color: var(--ink2);
+}
+.ib:hover:not(:disabled) { background: var(--surface2); color: var(--ink); }
+.ib:disabled { opacity: .35; cursor: default; }
+.ib.danger { color: var(--danger); }
+.ctl .mini { color: var(--accent); margin-left: auto; }
+.sec { display: flex; align-items: center; gap: 2px; padding: 12px 0 2px; }
+.sec-in {
+  flex: 1; min-width: 0; font-family: var(--font-d); font-weight: 600; font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink2);
+  background: transparent; border: 0; border-bottom: 1px solid var(--line); padding: 6px 0; height: 36px; border-radius: 0;
+}
+.sec-in:focus { outline: none; border-color: var(--accent); color: var(--ink); }
+.subt { font-size: 13px; color: var(--ink2); font-variant-numeric: tabular-nums; padding: 0 6px; }
+.sec .ib { width: 34px; height: 34px; }
+.empty { text-align: center; padding: 28px 16px; background: var(--surface); border: 1px dashed var(--line2); border-radius: 16px; }
+.empty b { font-family: var(--font-d); font-size: 18px; }
+.empty p { color: var(--ink2); margin: 4px 0 14px; }
+.row-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid var(--line2);
+  background: var(--surface); font-weight: 600; font-size: 14.5px;
+}
+.btn:hover { border-color: var(--ink3); }
+.btn.sm { height: 36px; padding: 0 12px; font-size: 13.5px; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.ghost { background: transparent; }
+.btn.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+.add-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.add-row .btn { height: 38px; font-size: 13.5px; font-weight: 500; border-style: dashed; background: transparent; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+
+/* saved */
+.sv-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 6px 0 12px; }
+.sv-head h2 { font-size: 20px; }
+#savedList { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.sc { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; }
+.sc.cur { border-color: var(--accent-line); }
+.sc-main { display: flex; flex-direction: column; min-width: 0; flex: 1 1 200px; }
+.sc-main b { font-family: var(--font-d); font-size: 16.5px; overflow-wrap: anywhere; }
+.sc-main span { font-size: 13px; color: var(--ink2); }
+.sc-main .fo { color: var(--accent); }
+.sc-act { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.cf { font-size: 13px; color: var(--danger); margin-right: 4px; }
+
+/* sheets */
+#sheet {
+  position: fixed; inset: 0; z-index: 40; background: var(--scrim); display: flex; align-items: flex-end; justify-content: center;
+}
+.sheet {
+  position: relative; width: 100%; max-width: 560px; max-height: 90dvh; overflow-y: auto; background: var(--surface); color: var(--ink);
+  border-radius: 20px 20px 0 0; padding: 20px max(18px, env(safe-area-inset-right, 0px)) calc(20px + env(safe-area-inset-bottom, 0px)) max(18px, env(safe-area-inset-left, 0px));
+}
+.sheet h2 { font-size: 24px; padding-right: 44px; }
+.sheet h4 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink2); margin: 16px 0 6px; font-family: var(--font-b); font-weight: 600; }
+.sheet p { margin: 8px 0; }
+.sk { color: var(--ink2); font-style: italic; margin: 0 !important; }
+.x { position: absolute; top: 12px; right: 12px; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; border: 0; background: var(--surface2); color: var(--ink); }
+.dfig { background: var(--surface2); border-radius: 14px; aspect-ratio: 4 / 3; overflow: hidden; margin: 24px 0 14px; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; padding: 3px 10px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); }
+.tag.soft { background: var(--surface2); color: var(--ink2); }
+.tag.warn { background: var(--warn-soft); color: var(--warn); }
+.cues { margin: 0; padding-left: 20px; }
+.cues li { margin: 3px 0; }
+.sheet-act { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.tpls { list-style: none; padding: 0; margin: 14px 0 0; display: grid; gap: 8px; }
+.tpl { width: 100%; text-align: left; display: grid; gap: 2px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line2); background: var(--surface); }
+.tpl:hover { border-color: var(--accent); }
+.tpl b { font-family: var(--font-d); font-size: 17px; }
+.tpl span { color: var(--ink2); font-size: 13.5px; }
+.tpl em { color: var(--accent); font-style: normal; font-size: 13px; }
+.tpl.blank { border-style: dashed; }
+#planTxt { height: auto; width: 100%; padding: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; line-height: 1.5; margin-top: 12px; resize: vertical; white-space: pre; overflow: auto; }
+
+/* toast */
+#toast {
+  position: fixed; left: 50%; bottom: calc(86px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 12px); z-index: 50; opacity: 0; pointer-events: none;
+  background: var(--ink); color: var(--bg); padding: 10px 14px; border-radius: 12px; display: flex; gap: 12px; align-items: center; font-size: 14px; max-width: calc(100vw - 32px);
+  transition: opacity .18s, transform .18s;
+}
+#toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+#toast button { background: none; border: 0; color: inherit; font-weight: 700; text-decoration: underline; padding: 4px; }
+
+/* teach mode */
+#teach { position: fixed; inset: 0; z-index: 45; background: var(--bg); overflow-y: auto; }
+.tc {
+  max-width: 640px; margin: 0 auto; min-height: 100%; display: flex; flex-direction: column;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(20px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+}
+.tc-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--ink2); }
+.tc-top .btn { height: 38px; }
+.tc-sec { margin: 4px 0 0; font-size: 12.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink2); }
+.tc-fig { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; aspect-ratio: 4 / 3; max-height: 36dvh; width: 100%; margin: 10px auto; overflow: hidden; }
+.tc-fig svg { max-height: 36dvh; }
+.tc-name { font-size: 30px; line-height: 1.1; }
+.tc-sub { margin: 2px 0 8px; color: var(--ink2); font-style: italic; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.side { font-style: normal; font-size: 12.5px; font-weight: 600; background: var(--accent-soft); color: var(--accent); padding: 2px 10px; border-radius: 99px; }
+.tc-cues { margin: 0; padding-left: 20px; color: var(--ink); }
+.tc-note { margin: 8px 0 0; padding: 8px 12px; background: var(--accent-soft); color: var(--accent); border-radius: 10px; font-size: 14px; }
+.tc-time { font-family: var(--font-d); font-weight: 600; font-size: clamp(56px, 18vw, 92px); line-height: 1; text-align: center; margin: 16px 0 4px; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.tc-ctl { display: flex; align-items: center; justify-content: center; gap: 18px; margin: 12px 0; }
+.rb { width: 56px; height: 56px; border-radius: 50%; border: 1px solid var(--line2); background: var(--surface); display: grid; place-items: center; color: var(--ink); }
+.rb.big { width: 76px; height: 76px; background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.tc-next { text-align: center; color: var(--ink2); margin: 4px 0 0; font-size: 14px; }
+.tc-done { margin: auto; text-align: center; display: grid; gap: 12px; justify-items: center; }
+.tc-done h2 { font-size: 34px; }
+
+.only-m { display: flex; }
+
+@media (min-width: 980px) {
+  body { padding-block: 0 48px; }
+  .top { padding: 16px 0 14px; }
+  .tabs { position: static; padding: 0; background: none; border: 0; gap: 4px; }
+  .tabs button { flex-direction: row; gap: 8px; padding: 0 14px; min-height: 40px; font-size: 14px; }
+  .only-m { display: none !important; }
+  .panes { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+  .app[data-view="lib"] .main, .app:not([data-view="lib"]) .lib { display: block; }
+  .app[data-view="lib"] #classView { display: block; }
+  .app[data-view="lib"] #savedView { display: none; }
+  .lib { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 72px); max-height: calc(100dvh - 96px - env(safe-area-inset-top, 0px)); overflow-y: auto; padding-right: 6px; }
+  #toast { bottom: 28px; }
+  #sheet { align-items: center; }
+  .sheet { border-radius: 20px; max-height: 86dvh; }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+
+</style>
+<div class="app" id="app" data-view="class">
+  <header class="top">
+    <div class="brand"><h1>Class builder</h1><span class="wip" title="Work in progress">WIP</span><span class="ver" id="ver"></span><span id="saveState" class="ss"></span></div>
+    <button type="button" class="btn sm" id="installBtn" hidden>Install app</button>
+    <nav id="tabs" class="tabs" aria-label="Sections">
+      <button type="button" data-view="lib" class="only-m"><span data-ic="grid"></span>Poses</button>
+      <button type="button" data-view="class"><span data-ic="list"></span>Class <span id="tabBadge"></span></button>
+      <button type="button" data-view="saved"><span data-ic="saved"></span>My classes</button>
+    </nav>
+  </header>
+  <div class="panes">
+    <section class="pane lib" id="lib" aria-label="Pose library">
+      <label class="search"><span data-ic="search"></span><input id="search" type="search" placeholder="Search by pose, Sanskrit name, or body area" autocomplete="off" aria-label="Search poses"></label>
+      <div class="chips" id="chips" role="group" aria-label="Pose category"></div>
+      <div class="filters">
+        <label>Level <select id="lvlSel"><option value="0">All levels</option><option value="1">Beginner</option><option value="2">Intermediate</option><option value="3">Advanced</option></select></label>
+        <details class="avoid"><summary>Avoid poses that load <span id="avoidCount"></span></summary><div class="chips wrap" id="avoidChips"></div></details>
+      </div>
+      <p class="note" id="hiddenNote"></p>
+      <div id="grid"></div>
+    </section>
+    <section class="pane main" id="main" aria-label="Class">
+      <div id="classView">
+        <div class="card head">
+          <input id="clsTitle" type="text" placeholder="Class name" aria-label="Class name" maxlength="80">
+          <div class="meta">
+            <input id="clsFocus" type="text" placeholder="Theme or peak pose, e.g. hips and Pigeon" aria-label="Class theme" maxlength="100">
+            <select id="clsTarget" aria-label="Target length"><option value="20">20 min</option><option value="30">30 min</option><option value="45">45 min</option><option value="60">60 min</option><option value="75">75 min</option><option value="90">90 min</option></select>
+          </div>
+          <div class="summary" id="summary"></div>
+        </div>
+        <div class="items-head"><h2>Sequence</h2></div>
+        <ol id="items"></ol>
+        <div class="add-row">
+          <button class="btn" type="button" data-act="add-section">+ Section</button>
+          <button class="btn" type="button" data-act="add-step">+ Custom step</button>
+          <button class="btn only-m" type="button" data-act="goto" data-v="lib">+ Poses</button>
+        </div>
+        <div class="actions">
+          <button class="btn primary" type="button" data-act="teach"><span data-ic="teach"></span>Teach mode</button>
+          <button class="btn" type="button" data-act="export"><span data-ic="text"></span>Plan text</button>
+          <button class="btn" type="button" data-act="new"><span data-ic="plus"></span>New class</button>
+        </div>
+      </div>
+      <div id="savedView">
+        <div class="sv-head"><h2>My classes</h2><button class="btn primary sm" type="button" data-act="new"><span data-ic="plus"></span>New class</button></div>
+        <ul id="savedList"></ul>
+      </div>
+    </section>
+  </div>
+</div>
+<div id="sheet" hidden></div>
+<div id="teach" hidden></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<script src="jspdf.min.js"></script>
+<script>
+const YogaFig = (() => {
+  const D = Math.PI / 180;
+  const LEN = { ua: .62, fa: .53, th: .82, sh: .78, ft: .26, nk: .1, hr: .2 };
+  const dir = a => [Math.cos(a * D), Math.sin(a * D)];
+  const pt = (p, a, l) => { const d = dir(a); return [p[0] + d[0] * l, p[1] + d[1] * l]; };
+  const DEF = { t: -90, t2: null, h: -90, a: [[90, 90], [90, 90]], l: [[90, 90, 0], [90, 90, 0]] };
+  const SIDES = ['N', 'F'];
+
+  function solve(src) {
+    const P = Object.assign({}, DEF, src);
+    const t2 = P.t2 == null ? P.t : P.t2;
+    const a = P.a.map(x => x.slice());
+    const l = P.l.map(x => x.slice());
+    const J = {};
+    const compute = () => {
+      J.hip = [0, 0];
+      const mid = pt(J.hip, P.t, .5);
+      J.mid = mid;
+      J.sh = pt(mid, t2, .42);
+      J.neck = pt(mid, t2, .5);
+      J.head = pt(J.neck, P.h, LEN.nk + LEN.hr);
+      SIDES.forEach((s, i) => {
+        const el = pt(J.sh, a[i][0], LEN.ua);
+        J['el' + s] = el;
+        J['wr' + s] = pt(el, a[i][1], LEN.fa);
+        const kn = pt(J.hip, l[i][0], LEN.th);
+        const an = pt(kn, l[i][1], LEN.sh);
+        J['kn' + s] = kn;
+        J['an' + s] = an;
+        J['to' + s] = pt(an, l[i][2], LEN.ft);
+      });
+    };
+    compute();
+    let F = null;
+    if (typeof P.ref === 'number') F = P.ref;
+    else if (P.ref) F = J[P.ref][1];
+
+    const slot = name => {
+      const k = name.slice(0, 2), i = name.endsWith('F') ? 1 : 0;
+      if (k === 'kn') return [l, i, 0];
+      if (k === 'an' || k === 'to') return [l, i, 1];
+      if (k === 'el') return [a, i, 0];
+      return [a, i, 1];
+    };
+    const adiff = (x, y) => { let d = Math.abs(x - y) % 360; return d > 180 ? 360 - d : d; };
+    const snap = name => {
+      if (F == null) return;
+      const [arr, i, k] = slot(name);
+      const given = arr[i][k];
+      let best = null, bestErr = 1e9;
+      for (let ang = 0; ang < 360; ang += .5) {
+        arr[i][k] = ang; compute();
+        const err = Math.abs(J[name][1] - F);
+        const score = err < .012 ? adiff(ang, given) * .001 : 10 + err;
+        if (score < bestErr) { bestErr = score; best = ang; }
+      }
+      arr[i][k] = best; compute();
+    };
+    const order = { kn: 0, el: 1, an: 2, to: 2, wr: 3 };
+    const snaps = (P.snap || []).slice().sort((x, y) => order[x.slice(0, 2)] - order[y.slice(0, 2)]);
+    snaps.filter(n => order[n.slice(0, 2)] < 2).forEach(snap);
+
+    const ik = (name, target, bend) => {
+      const isArm = name.startsWith('wr');
+      const i = name.endsWith('F') ? 1 : 0;
+      const root = isArm ? J.sh : J.hip;
+      const L1 = isArm ? LEN.ua : LEN.th, L2 = isArm ? LEN.fa : LEN.sh;
+      const dx = target[0] - root[0], dy = target[1] - root[1];
+      let d = Math.hypot(dx, dy);
+      d = Math.max(Math.abs(L1 - L2) + .01, Math.min(L1 + L2 - .002, d));
+      const base = Math.atan2(dy, dx) / D;
+      const A = Math.acos(Math.max(-1, Math.min(1, (L1 * L1 + d * d - L2 * L2) / (2 * L1 * d)))) / D;
+      const a1 = base + bend * A;
+      const el = pt(root, a1, L1);
+      const a2 = Math.atan2(target[1] - el[1], target[0] - el[0]) / D;
+      if (isArm) { a[i][0] = a1; a[i][1] = a2; } else { l[i][0] = a1; l[i][1] = a2; }
+      compute();
+    };
+    if (P.ik) Object.keys(P.ik).forEach(n => { const r = P.ik[n](J, F); ik(n, r[0], r[1]); });
+    snaps.filter(n => order[n.slice(0, 2)] >= 2).forEach(snap);
+
+    return { J, F, P, t2 };
+  }
+
+  const W = 5.6, H = 4.4;
+  const f = n => Math.round(n * 1000) / 1000;
+  const poly = pts => pts.map(p => f(p[0]) + ',' + f(p[1])).join(' ');
+
+  function svg(shape, o) {
+    o = o || {};
+    const { J, F, P } = solve(shape);
+    const pts = Object.keys(J).filter(k => k !== 'mid').map(k => J[k]);
+    let minx = Math.min(...pts.map(p => p[0])) - .25, maxx = Math.max(...pts.map(p => p[0])) + .25;
+    const maxy = Math.max(...pts.map(p => p[1]));
+    const miny = Math.min(...pts.map(p => p[1])) - .25;
+    const floorY = (F == null ? maxy : F) + .07;
+    if (P.wall != null) maxx = Math.max(maxx, P.wall + .2);
+    const bw = maxx - minx + .6, bh = floorY + .12 - miny + .5;
+    const vw = Math.max(bw, bh * (W / H), 3.6), vh = vw * (H / W);
+    const x0 = (minx + maxx) / 2 - vw / 2, y0 = (miny + floorY + .12) / 2 - vh / 2;
+    const g = [];
+    const limb = (cls, pp) => `<polyline class="${cls}" points="${poly(pp)}"/>`;
+    const armP = s => [J.sh, J['el' + s], J['wr' + s]];
+    const legP = s => [J.hip, J['kn' + s], J['an' + s], J['to' + s]];
+    g.push(limb('far', armP('F')), limb('far', legP('F')));
+    g.push(limb('near', [J.hip, J.mid, J.neck]));
+    g.push(limb('near', legP('N')), limb('near', armP('N')));
+    const ground = `<line class="gr" x1="${f(minx - .15)}" y1="${f(floorY)}" x2="${f(maxx + .15)}" y2="${f(floorY)}"/>`;
+    const wall = P.wall != null ? `<line class="gr" x1="${f(P.wall)}" y1="${f(floorY)}" x2="${f(P.wall)}" y2="${f(y0 + .2)}"/>` : '';
+    const head = `<circle class="hd" cx="${f(J.head[0])}" cy="${f(J.head[1])}" r=".2"/>`;
+    const cls = o.cls ? ` class="${o.cls}"` : '';
+    return `<svg${cls} viewBox="${f(x0)} ${f(y0)} ${f(vw)} ${f(vh)}" role="img" aria-label="${o.label || 'Yoga pose figure'}" xmlns="http://www.w3.org/2000/svg">` +
+      `<g class="fg">${ground}${wall}${g.join('')}${head}</g></svg>`;
+  }
+
+  return { solve, svg };
+})();
+
+const SHAPES = (() => {
+  const mid = (A, B, k) => [A[0] + (B[0] - A[0]) * k, A[1] + (B[1] - A[1]) * k];
+  const flatLegs = [[0, 0, -90], [2, 0, -90]];
+  const prone = [[178, 178, 180], [179, 179, 180]];
+  const fours = [[90, 180, 180], [92, 180, 180]];
+  const stand = [[90, 90, 0], [94, 90, 0]];
+  return {
+    'mountain': { a: [[78, 80], [102, 100]], l: [[84, 84, 0], [96, 96, 180]], ref: 'anN' },
+    'upward-salute': { a: [[-68, -84], [-112, -96]], l: [[84, 84, 0], [96, 96, 180]], ref: 'anN' },
+    'forward-fold': { t: 25, t2: 70, h: 80, l: [[91, 90, 0], [93, 90, 0]], ref: 'anN',
+      ik: { wrN: (J, F) => [[J.sh[0] + .14, F], 1], wrF: (J, F) => [[J.sh[0] + .02, F], 1] } },
+    'half-lift': { t: -10, h: -20, a: [[88, 90], [92, 90]], l: [[88, 90, 0], [92, 90, 0]], ref: 'anN' },
+    'chair': { t: -62, h: -70, a: [[-68, -68], [-72, -72]], l: [[30, 100, 0], [26, 100, 0]], ref: 'anN', snap: ['anF'] },
+    'crescent-lunge': { a: [[-90, -90], [-95, -95]], l: [[12, 90, 0], [150, 150, 60]], ref: 'anN', snap: ['toF'] },
+    'low-lunge': { a: [[-90, -90], [-95, -95]], l: [[3, 90, 0], [95, 180, 180]], ref: 'anN', snap: ['knF'] },
+    'warrior-1': { h: -85, a: [[-90, -90], [-95, -95]], l: [[12, 90, 0], [140, 138, 10]], ref: 'anN', snap: ['anF'] },
+    'warrior-2': { h: -80, a: [[0, 0], [180, 180]], l: [[20, 90, 0], [140, 138, 180]], ref: 'anN', snap: ['anF'] },
+    'reverse-warrior': { t: -100, h: -110, a: [[-110, -110], [100, 100]], l: [[20, 90, 0], [140, 138, 180]], ref: 'anN', snap: ['anF'],
+      ik: { wrF: J => [mid(J.hip, J.knF, .65), 1] } },
+    'side-angle': { t: -32, h: -38, a: [[95, 95], [-32, -32]], l: [[20, 90, 0], [140, 138, 180]], ref: 'anN', snap: ['anF'],
+      ik: { wrN: J => [[J.knN[0] - .02, J.knN[1] - .06], 1] } },
+    'triangle': { t: 8, h: -10, a: [[92, 92], [-90, -90]], l: [[55, 55, 0], [125, 125, 180]], ref: 'anN' },
+    'wide-fold': { t: 90, h: 90, l: [[50, 50, 0], [130, 130, 180]], ref: 'anN',
+      ik: { wrN: (J, F) => [[.7, F], -1], wrF: (J, F) => [[-.7, F], 1] } },
+    'goddess': { a: [[0, -90], [180, -90]], l: [[25, 90, 0], [155, 90, 180]], ref: 'anN' },
+    'crescent-moon': { t: -98, t2: -118, h: -128, a: [[-118, -146], [-122, -150]], l: [[84, 84, 0], [96, 96, 180]], ref: 'anN' },
+    'tree': { a: [[-62, -100], [-118, -80]], l: [[90, 90, 0], [155, 20, 0]], ref: 'anN' },
+    'warrior-3': { t: -2, h: -8, a: [[0, 0], [-5, -5]], l: [[90, 90, 0], [185, 185, 90]], ref: 'anN' },
+    'half-moon': { t: 15, h: -10, a: [[90, 90], [-90, -90]], l: [[75, 100, 0], [195, 195, 90]], ref: 'anN', snap: ['wrN'] },
+    'dancer': { t: -76, h: -82, a: [[-22, -16], [170, 200]], l: [[90, 90, 0], [160, -75, -80]], ref: 'anN',
+      ik: { wrF: J => [J.anF, 1] } },
+    'table-top': { t: -20, h: -5, a: [[90, 90], [93, 93]], l: fours, ref: 'knN' },
+    'cat': { t: -30, t2: 15, h: 60, a: [[90, 90], [93, 93]], l: fours, ref: 'knN',
+      ik: { wrN: (J, F) => [[J.sh[0], F], -1], wrF: (J, F) => [[J.sh[0] - .1, F], -1] } },
+    'cow': { t: 5, t2: -40, h: -45, a: [[90, 90], [93, 93]], l: fours, ref: 'knN',
+      ik: { wrN: (J, F) => [[J.sh[0], F], -1], wrF: (J, F) => [[J.sh[0] - .1, F], -1] } },
+    'child': { t: 12, h: 0, a: [[8, 8], [12, 12]], l: [[25, 180, 180], [27, 180, 180]], ref: .38 },
+    'down-dog': { t: 40, h: 65, a: [[40, 40], [44, 44]], l: [[125, 125, 0], [128, 128, 0]], ref: 'anN', snap: ['wrN', 'wrF'] },
+    'plank': { t: -22, h: -8, a: [[90, 90], [92, 92]], l: [[158, 158, 70], [160, 160, 70]], ref: 'wrN', snap: ['toN', 'toF'] },
+    'chaturanga': { t: -7, h: -15, a: [[180, 90], [175, 90]], l: [[174, 174, 70], [175, 175, 70]], ref: 'wrN', snap: ['toN', 'toF'] },
+    'up-dog': { t: -50, t2: -80, h: -60, a: [[90, 90], [92, 92]], l: [[170, 170, 180], [172, 172, 180]], ref: .3,
+      ik: { wrN: (J, F) => [[J.sh[0], F], 1], wrF: (J, F) => [[J.sh[0] - .1, F], 1] } },
+    'cobra': { t: -20, t2: -45, h: -50, l: prone, ref: .07,
+      ik: { wrN: (J, F) => [[J.sh[0] + .1, F], 1], wrF: (J, F) => [[J.sh[0] + .05, F], 1] } },
+    'sphinx': { t: -25, t2: -50, h: -60, a: [[90, 0], [92, 0]], l: prone, ref: .07 },
+    'locust': { t: -15, t2: -25, h: -30, a: [[170, 175], [165, 172]], l: [[188, 190, 180], [190, 192, 180]], ref: .07 },
+    'bow': { t: -30, t2: -55, h: -60, l: [[200, -40, 0], [205, -45, 0]], ref: .06,
+      ik: { wrN: J => [J.anN, 1], wrF: J => [J.anF, 1] } },
+    'camel': { t: -105, t2: -125, h: -150, l: fours, ref: 'knN',
+      ik: { wrN: J => [[J.hip[0] - .12, J.hip[1] - .05], 1], wrF: J => [[J.hip[0] - .2, J.hip[1] - .1], 1] } },
+    'bridge': { t: 120, h: 170, a: [[5, 5], [8, 8]], l: [[5, 74, 0], [8, 74, 0]], ref: .87, snap: ['anN', 'anF'] },
+    'easy': { a: [[75, 70], [78, 72]], l: [[15, 175, 0], [20, 170, 0]], ref: 'anN',
+      ik: { wrN: J => [mid(J.hip, J.knN, .6), 1], wrF: J => [mid(J.hip, J.knF, .5), 1] } },
+    'staff': { a: [[100, 80], [104, 82]], l: flatLegs, ref: .07,
+      ik: { wrN: (J, F) => [[-.12, F], 1], wrF: (J, F) => [[-.2, F], 1] } },
+    'seated-fold': { t: -28, h: 0, l: flatLegs, ref: .07, ik: { wrN: J => [J.toN, -1], wrF: J => [J.toN, -1] } },
+    'head-to-knee': { t: -28, h: 0, l: [[3, 0, -90], [170, -2, 0]], ref: .07,
+      ik: { wrN: J => [J.toN, -1], wrF: J => [J.toN, -1] } },
+    'bound-angle': { l: [[345, 155, 0], [195, 25, 180]], ref: .13, ik: { wrN: J => [J.anN, 1], wrF: J => [J.anF, -1] } },
+    'hero': { a: [[50, 20], [55, 25]], l: [[25, 180, 180], [27, 180, 180]], ref: .35,
+      ik: { wrN: J => [mid(J.hip, J.knN, .5), 1], wrF: J => [mid(J.hip, J.knF, .45), 1] } },
+    'boat': { t: -115, h: -105, a: [[0, 0], [5, 5]], l: [[-40, -40, -40], [-42, -42, -42]], ref: .07 },
+    'garland': { a: [[60, -150], [120, -30]], l: [[5, 110, 0], [175, 70, 180]], ref: 'anN', snap: ['anF'] },
+    'side-plank': { t: -28, h: -50, a: [[90, 90], [-90, -90]], l: [[152, 152, 180], [154, 154, 180]], ref: 'wrN', snap: ['anN', 'anF'] },
+    'dolphin': { t: 50, h: 70, a: [[90, 0], [92, 0]], l: [[125, 125, 0], [128, 128, 0]], ref: 'anN', snap: ['elN', 'elF'] },
+    'corpse': { t: 178, h: 178, a: [[8, 3], [14, 6]], l: [[0, 0, -80], [2, 0, -80]], ref: .15 },
+    'knees-chest': { t: 180, h: 175, l: [[-140, 10, 0], [-145, 12, 0]], ref: .15, ik: { wrN: J => [J.knN, -1], wrF: J => [J.knF, -1] } },
+    'happy-baby': { t: 180, h: 178, l: [[-135, -70, 0], [-130, -65, 0]], ref: .15, ik: { wrN: J => [J.anN, 1], wrF: J => [J.anF, 1] } },
+    'fish': { t: 175, t2: 205, h: 130, a: [[14, 14], [18, 18]], l: [[0, 0, -80], [2, 0, -80]], ref: .15 },
+    'reclined-toe': { t: 180, h: 180, a: [[0, 0], [12, 12]], l: [[-105, -105, -90], [0, 0, -80]], ref: .15, ik: { wrN: J => [J.anN, 1] } },
+    'legs-wall': { t: 180, h: 180, a: [[170, 172], [165, 168]], l: [[-90, -90, -90], [-92, -90, -90]], ref: .15, wall: .22 },
+    'reclined-bound': { t: 180, h: 180, a: [[15, 10], [20, 12]], l: [[-30, 150, 0], [-35, 145, 0]], ref: .15 }
+  };
+})();
+
+const CATS = ['Standing', 'Balance', 'Hands & knees', 'Backbends', 'Seated', 'Supine'];
+const LEVELS = ['', 'Beginner', 'Intermediate', 'Advanced'];
+const AVOID = ['wrists', 'knees', 'neck', 'lower back', 'shoulders', 'hips', 'ankles', 'pregnancy', 'blood pressure'];
+const COUNTERS = ['child', 'forward-fold', 'seated-fold', 'knees-chest', 'down-dog', 'wide-fold'];
+
+// id, name, sanskrit, category, level, both sides, seconds per side, focus, benefit, cues, avoid, kind
+const RAW = [
+  ['mountain', 'Mountain', 'Tadasana', 0, 1, false, 30, ['posture', 'legs'], 'Sets alignment and steadies the breath.', ['Feet hip-width, weight even across both feet', 'Lengthen the crown up, soften the shoulders'], [], 'neutral'],
+  ['upward-salute', 'Upward salute', 'Urdhva Hastasana', 0, 1, false, 20, ['shoulders', 'spine'], 'Lengthens the sides of the body and opens the shoulders.', ['Reach up through the fingertips', 'Keep the ribs drawn in, gaze forward or up'], ['shoulders'], 'neutral'],
+  ['forward-fold', 'Standing forward fold', 'Uttanasana', 0, 1, false, 45, ['hamstrings', 'back'], 'Releases the back body and calms the nervous system.', ['Hinge from the hips with soft knees', 'Let the head and arms hang heavy'], ['lower back', 'blood pressure'], 'fold'],
+  ['half-lift', 'Half lift', 'Ardha Uttanasana', 0, 1, false, 15, ['back', 'hamstrings'], 'Lengthens the spine and wakes up the back body.', ['Hands to shins, back flat', 'Gaze slightly forward, neck long'], ['lower back'], 'neutral'],
+  ['chair', 'Chair', 'Utkatasana', 0, 2, false, 30, ['legs', 'core'], 'Builds strength in the thighs and glutes.', ['Sit the hips back, weight in the heels', 'Reach the arms long, tuck the tailbone'], ['knees'], 'neutral'],
+  ['crescent-lunge', 'High lunge', 'Ashta Chandrasana', 0, 2, true, 30, ['hips', 'legs'], 'Strengthens the legs and opens the hip flexors.', ['Front knee over the ankle', 'Back heel lifted, hips square'], ['knees'], 'neutral'],
+  ['low-lunge', 'Low lunge', 'Anjaneyasana', 0, 1, true, 45, ['hip flexors', 'quads'], 'Opens the hip flexors and the front of the thigh.', ['Pad the back knee if it is tender', 'Draw the front hip back, lift the chest'], ['knees'], 'neutral'],
+  ['warrior-1', 'Warrior I', 'Virabhadrasana I', 0, 2, true, 30, ['legs', 'hips', 'chest'], 'Builds leg strength and opens the chest and hip flexors.', ['Back heel grounded, foot at 45 degrees', 'Square the hips forward and reach up'], ['knees', 'blood pressure'], 'neutral'],
+  ['warrior-2', 'Warrior II', 'Virabhadrasana II', 0, 1, true, 30, ['legs', 'hips'], 'Builds stamina and opens the hips.', ['Front knee tracks over the second toe', 'Arms long, shoulders stacked over hips'], ['knees'], 'neutral'],
+  ['reverse-warrior', 'Reverse warrior', 'Viparita Virabhadrasana', 0, 1, true, 20, ['side body', 'legs'], 'Stretches the side body and keeps the legs working.', ['Keep the front knee bent over the ankle', 'Reach up and back, rest the other hand on the thigh'], ['knees'], 'lateral'],
+  ['side-angle', 'Extended side angle', 'Utthita Parsvakonasana', 0, 2, true, 30, ['side body', 'legs', 'hips'], 'Lengthens the side body and strengthens the legs.', ['Forearm on the thigh or hand to a block', 'One long line from back heel to fingertips'], ['knees', 'neck'], 'lateral'],
+  ['triangle', 'Triangle', 'Trikonasana', 0, 2, true, 30, ['hamstrings', 'side body'], 'Stretches the hamstrings and the side body.', ['Lengthen over the front leg before you tilt', 'Bottom hand to shin or block, top arm up'], ['neck', 'blood pressure'], 'lateral'],
+  ['wide-fold', 'Wide-legged forward fold', 'Prasarita Padottanasana', 0, 2, false, 45, ['hamstrings', 'inner thighs'], 'Stretches the inner thighs and hamstrings and quiets the mind.', ['Feet wide, toes turned slightly in', 'Hinge first, then fold with a long spine'], ['lower back', 'blood pressure'], 'fold'],
+  ['goddess', 'Goddess', 'Utkata Konasana', 0, 1, false, 30, ['hips', 'legs'], 'Strengthens the legs and opens the inner thighs.', ['Knees track over the toes', 'Elbows at shoulder height, tailbone heavy'], ['knees'], 'neutral'],
+  ['crescent-moon', 'Crescent moon', 'Parsva Urdhva Hastasana', 0, 1, true, 20, ['side body'], 'Opens the side body and creates space between the ribs.', ['Feet together, press down evenly', 'Lengthen up first, then arc to the side'], ['shoulders'], 'lateral'],
+  ['tree', 'Tree', 'Vrksasana', 1, 1, true, 30, ['balance', 'hips'], 'Improves balance and focus.', ['Foot to calf or inner thigh, never the knee', 'Fix your gaze on one point'], ['knees'], 'balance'],
+  ['warrior-3', 'Warrior III', 'Virabhadrasana III', 1, 2, true, 20, ['balance', 'hamstrings', 'core'], 'Builds balance and strengthens the back body.', ['Hinge forward as the back leg lifts', 'Hips level, back foot flexed'], ['blood pressure'], 'balance'],
+  ['half-moon', 'Half moon', 'Ardha Chandrasana', 1, 3, true, 20, ['balance', 'hips', 'legs'], 'Challenges balance and opens the hips and hamstrings.', ['Fingertips on a block under the shoulder', 'Stack the top hip over the bottom hip'], ['neck', 'blood pressure'], 'balance'],
+  ['dancer', 'Dancer', 'Natarajasana', 1, 3, true, 20, ['balance', 'quads', 'chest'], 'Opens the chest and the front of the thigh while you balance.', ['Kick the foot back into the hand', 'Lift the chest, reach the front arm long'], ['knees', 'lower back', 'shoulders'], 'balance'],
+  ['table-top', 'Table top', 'Bharmanasana', 2, 1, false, 20, ['core', 'wrists'], 'A stable base for most floor work.', ['Wrists under shoulders, knees under hips', 'Keep the spine long and neutral'], ['wrists', 'knees'], 'neutral'],
+  ['cat', 'Cat', 'Marjaryasana', 2, 1, false, 20, ['spine'], 'Mobilises the spine and stretches the upper back.', ['Press the floor away and round the back', 'Chin moves toward the chest'], ['wrists', 'knees'], 'neutral'],
+  ['cow', 'Cow', 'Bitilasana', 2, 1, false, 20, ['spine', 'chest'], 'Mobilises the spine and opens the chest and belly.', ['Tilt the tailbone up and draw the chest forward', 'Keep the shoulders away from the ears'], ['wrists', 'neck', 'knees'], 'neutral'],
+  ['child', "Child's pose", 'Balasana', 2, 1, false, 60, ['back', 'hips'], 'A resting fold that calms the breath.', ['Knees wide or together, hips toward the heels', 'Rest the forehead down and breathe into the back'], ['knees'], 'fold'],
+  ['down-dog', 'Downward-facing dog', 'Adho Mukha Svanasana', 2, 1, false, 45, ['hamstrings', 'shoulders', 'calves'], 'Lengthens the whole back body and builds shoulder strength.', ['Press the floor away and lengthen the spine', 'Bend the knees if the back rounds'], ['wrists', 'shoulders', 'blood pressure'], 'neutral'],
+  ['dolphin', 'Dolphin', 'Ardha Pincha Mayurasana', 2, 2, false, 30, ['shoulders', 'hamstrings'], 'Strengthens the shoulders and stretches the back body without loading the wrists.', ['Forearms parallel, elbows under shoulders', 'Lift the hips and lengthen the spine'], ['shoulders', 'neck', 'blood pressure'], 'neutral'],
+  ['plank', 'Plank', 'Phalakasana', 2, 1, false, 30, ['core', 'arms'], 'Builds full-body strength.', ['Shoulders over wrists, one long line', 'Press the floor away, draw the ribs in'], ['wrists', 'shoulders'], 'neutral'],
+  ['chaturanga', 'Four-limbed staff', 'Chaturanga Dandasana', 2, 2, false, 10, ['arms', 'core'], 'Builds arm and core strength.', ['Elbows hug the ribs and bend to 90 degrees', 'Keep the body in one line'], ['wrists', 'shoulders'], 'neutral'],
+  ['side-plank', 'Side plank', 'Vasisthasana', 2, 2, true, 20, ['core', 'shoulders'], 'Strengthens the core, shoulders and wrists.', ['Stack the feet and lift the hips', 'Reach the top arm up, press the floor away'], ['wrists', 'shoulders'], 'neutral'],
+  ['up-dog', 'Upward-facing dog', 'Urdhva Mukha Svanasana', 3, 2, false, 15, ['chest', 'back'], 'Opens the chest and strengthens the back and arms.', ['Press into the hands and the tops of the feet', 'Lift the thighs and open the chest'], ['wrists', 'lower back', 'neck', 'pregnancy'], 'back'],
+  ['cobra', 'Cobra', 'Bhujangasana', 3, 1, false, 20, ['back', 'chest'], 'Strengthens the back and opens the chest.', ['Elbows tucked, lift from the back', 'Keep the pubic bone grounded'], ['lower back', 'neck', 'pregnancy'], 'back'],
+  ['sphinx', 'Sphinx', 'Salamba Bhujangasana', 3, 1, false, 45, ['back', 'chest'], 'A gentle backbend that is easy to hold.', ['Elbows under the shoulders', 'Lengthen the front body, relax the glutes'], ['lower back', 'pregnancy'], 'neutral'],
+  ['locust', 'Locust', 'Salabhasana', 3, 2, false, 20, ['back', 'glutes'], 'Strengthens the back body.', ['Lift the chest and legs together', 'Keep the neck long, gaze down'], ['lower back', 'neck', 'pregnancy'], 'back'],
+  ['bow', 'Bow', 'Dhanurasana', 3, 3, false, 20, ['chest', 'quads', 'back'], 'A deep backbend that opens the whole front body.', ['Kick the feet into the hands', 'Lift the chest and breathe wide'], ['lower back', 'neck', 'pregnancy', 'blood pressure'], 'back'],
+  ['camel', 'Camel', 'Ustrasana', 3, 3, false, 20, ['chest', 'hip flexors'], 'Opens the chest, shoulders and hip flexors.', ['Hips over knees, hands on the low back', 'Lift the chest first, then arch'], ['neck', 'lower back', 'blood pressure', 'knees'], 'back'],
+  ['bridge', 'Bridge', 'Setu Bandha Sarvangasana', 3, 1, false, 30, ['glutes', 'back', 'chest'], 'Strengthens the glutes and opens the chest.', ['Feet hip-width, press into the heels', 'Lift the hips, keep the knees tracking forward'], ['neck'], 'back'],
+  ['fish', 'Fish', 'Matsyasana', 3, 2, false, 30, ['chest', 'neck', 'shoulders'], 'Opens the chest and throat after forward work.', ['Press the forearms down and lift the chest', 'Rest the crown lightly, keep weight in the arms'], ['neck', 'blood pressure'], 'back'],
+  ['easy', 'Easy pose', 'Sukhasana', 4, 1, false, 60, ['hips', 'posture'], 'A comfortable seat for breathing and centring.', ['Sit on a folded blanket if the knees rise', 'Switch the cross of the legs halfway'], ['knees', 'hips'], 'neutral'],
+  ['staff', 'Staff', 'Dandasana', 4, 1, false, 30, ['posture', 'core'], 'Teaches upright seated alignment.', ['Sit tall with the feet flexed', 'Press the thighs down and lengthen the spine'], ['lower back'], 'neutral'],
+  ['seated-fold', 'Seated forward fold', 'Paschimottanasana', 4, 1, false, 60, ['hamstrings', 'back'], 'Stretches the whole back body and settles the mind.', ['Sit on a blanket and fold from the hips', 'Bend the knees to keep the spine long'], ['lower back'], 'fold'],
+  ['head-to-knee', 'Head-to-knee', 'Janu Sirsasana', 4, 2, true, 45, ['hamstrings', 'hips'], 'Stretches the hamstrings and the side of the back.', ['Sole of the foot to the inner thigh', 'Lengthen forward, then fold'], ['knees', 'lower back'], 'fold'],
+  ['bound-angle', 'Bound angle', 'Baddha Konasana', 4, 1, false, 60, ['hips', 'groin'], 'Opens the hips and inner thighs.', ['Soles together, heels close to the body', 'Sit tall, or fold forward with a long spine'], ['knees', 'hips'], 'neutral'],
+  ['hero', 'Hero', 'Virasana', 4, 1, false, 60, ['knees', 'quads', 'ankles'], 'Stretches the thighs and ankles and gives a steady seat.', ['Sit on a block between the heels', 'Back off if the knees complain'], ['knees', 'ankles'], 'neutral'],
+  ['boat', 'Boat', 'Navasana', 4, 2, false, 20, ['core', 'hip flexors'], 'Builds core and hip flexor strength.', ['Lift the chest and lean back with a long spine', 'Hands behind the knees to start'], ['lower back', 'neck', 'pregnancy'], 'neutral'],
+  ['garland', 'Garland squat', 'Malasana', 4, 1, false, 45, ['hips', 'ankles'], 'Opens the hips and groin and mobilises the ankles.', ['Heels down, or on a folded blanket', 'Elbows press the knees, chest tall'], ['knees', 'ankles'], 'neutral'],
+  ['corpse', 'Corpse', 'Savasana', 5, 1, false, 300, ['rest'], 'Final rest. Lets the body absorb the practice.', ['Let the legs and arms fall open', 'Release the breath and let the body get heavy'], [], 'rest'],
+  ['knees-chest', 'Knees to chest', 'Apanasana', 5, 1, false, 45, ['lower back', 'hips'], 'Releases the lower back.', ['Hug the knees in and relax the shoulders', 'Rock gently from side to side'], ['knees', 'pregnancy'], 'fold'],
+  ['happy-baby', 'Happy baby', 'Ananda Balasana', 5, 1, false, 45, ['hips', 'groin', 'back'], 'Opens the hips and releases the lower back.', ['Hold the shins or feet with the knees wide', 'Keep the tailbone heavy'], ['knees', 'neck'], 'neutral'],
+  ['reclined-toe', 'Reclined hand-to-big-toe', 'Supta Padangusthasana', 5, 1, true, 45, ['hamstrings', 'hips'], 'Stretches the hamstrings with the back supported.', ['Use a strap around the foot', 'Keep the other leg long and active'], ['lower back'], 'neutral'],
+  ['legs-wall', 'Legs up the wall', 'Viparita Karani', 5, 1, false, 180, ['legs', 'nervous system'], 'Restores tired legs and calms the nervous system.', ['Hips close to the wall, a folded blanket under them', 'Let the arms rest open'], ['blood pressure'], 'rest'],
+  ['reclined-bound', 'Reclined bound angle', 'Supta Baddha Konasana', 5, 1, false, 180, ['hips', 'groin'], 'A supported hip opener that is easy to hold.', ['Soles together, knees fall open', 'Support the knees with blocks if needed'], ['knees', 'hips'], 'rest']
+];
+
+const POSES = RAW.map(r => ({ id: r[0], name: r[1], sk: r[2], cat: CATS[r[3]], lvl: r[4], sides: r[5], dur: r[6], focus: r[7], ben: r[8], cues: r[9], avoid: r[10], kind: r[11] }));
+const POSE = {};
+POSES.forEach(p => { POSE[p.id] = p; });
+
+// templates: ['#', section name] or [pose id, seconds per side] (both sides follows the pose default)
+const TEMPLATES = [
+  { id: 'gentle', name: 'Gentle hatha', blurb: 'Slow standing work, simple floor poses, long rest.', items: [
+    ['#', 'Arrive'], ['easy', 180],
+    ['#', 'Warm up'], ['cat', 60], ['cow', 60], ['child', 90], ['down-dog', 60], ['forward-fold', 60], ['mountain', 45], ['upward-salute', 30],
+    ['#', 'Standing'], ['low-lunge', 60], ['warrior-1', 45], ['warrior-2', 45], ['reverse-warrior', 30], ['side-angle', 45], ['triangle', 45], ['tree', 45],
+    ['#', 'Floor'], ['cobra', 40], ['child', 60], ['bridge', 60], ['seated-fold', 90], ['bound-angle', 90], ['knees-chest', 60],
+    ['#', 'Rest'], ['corpse', 420]] },
+  { id: 'vinyasa', name: 'Vinyasa flow', blurb: 'Sun-salutation warm-up, standing flow, balance peak.', items: [
+    ['#', 'Centre'], ['easy', 120],
+    ['#', 'Warm up'], ['cat', 60], ['cow', 60], ['child', 60], ['down-dog', 60], ['forward-fold', 45], ['half-lift', 20], ['plank', 30], ['chaturanga', 15], ['up-dog', 20], ['down-dog', 45],
+    ['#', 'Standing flow'], ['crescent-lunge', 45], ['warrior-2', 45], ['reverse-warrior', 25], ['side-angle', 40], ['triangle', 40], ['goddess', 45], ['wide-fold', 60],
+    ['#', 'Peak'], ['warrior-3', 30], ['half-moon', 30], ['dancer', 30],
+    ['#', 'Cool down'], ['bridge', 60], ['bound-angle', 90], ['happy-baby', 60], ['knees-chest', 45],
+    ['#', 'Rest'], ['corpse', 360]] },
+  { id: 'hips', name: 'Hips and hamstrings', blurb: 'Long holds for tight legs and hips.', items: [
+    ['#', 'Arrive'], ['easy', 120],
+    ['#', 'Warm up'], ['cat', 40], ['cow', 40], ['low-lunge', 90], ['down-dog', 60],
+    ['#', 'Open'], ['forward-fold', 90], ['wide-fold', 90], ['goddess', 60], ['garland', 90],
+    ['#', 'Floor'], ['head-to-knee', 90], ['seated-fold', 120], ['bound-angle', 120], ['happy-baby', 90], ['reclined-toe', 75],
+    ['#', 'Rest'], ['corpse', 300]] },
+  { id: 'restore', name: 'Restorative wind-down', blurb: 'Supported, quiet, mostly on the floor.', items: [
+    ['#', 'Arrive'], ['easy', 120], ['child', 180],
+    ['#', 'Unwind'], ['sphinx', 120], ['seated-fold', 150], ['bound-angle', 120],
+    ['#', 'Supported'], ['reclined-bound', 240], ['legs-wall', 300], ['knees-chest', 60],
+    ['#', 'Rest'], ['corpse', 300]] }
+];
+
+(function () {
+  'use strict';
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const uid = () => Math.random().toString(36).slice(2, 9);
+  const fmt = s => {
+    s = Math.max(0, Math.round(s));
+    const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), r = s % 60;
+    return h ? h + ':' + String(m).padStart(2, '0') + ':' + String(r).padStart(2, '0') : m + ':' + String(r).padStart(2, '0');
+  };
+  const mins = s => Math.round(s / 60);
+
+  const ICONS = {
+    up: '<path d="m18 15-6-6-6 6"/>', down: '<path d="m6 9 6 6 6-6"/>',
+    plus: '<path d="M5 12h14M12 5v14"/>', minus: '<path d="M5 12h14"/>', x: '<path d="M18 6 6 18M6 6l12 12"/>',
+    copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+    trash: '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>',
+    play: '<path d="M7 4l13 8-13 8z"/>', pause: '<path d="M8 5v14M16 5v14"/>',
+    back: '<path d="M19 20 9 12l10-8zM5 19V5"/>', fwd: '<path d="M5 4l10 8-10 8zM19 5v14"/>',
+    search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+    grid: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+    list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+    saved: '<path d="M6 3h12v18l-6-4-6 4z"/>',
+    dl: '<path d="M12 3v12m0 0-4-4m4 4 4-4M4 21h16"/>',
+    warn: '<path d="M12 3 2 20h20zM12 10v4M12 17h.01"/>',
+    info: '<circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/>',
+    check: '<path d="m5 12 5 5 9-10"/>',
+    teach: '<path d="M4 5h16v11H4zM8 21h8M12 16v5"/>',
+    text: '<path d="M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h7"/>'
+  };
+  const ic = (n, s) => '<svg class="ic" viewBox="0 0 24 24" width="' + (s || 18) + '" height="' + (s || 18) + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[n] + '</svg>';
+
+  const figCache = {};
+  const fig = id => figCache[id] || (figCache[id] = YogaFig.svg(SHAPES[id], { label: POSE[id].name + ' pose' }));
+  const catIdx = c => CATS.indexOf(c);
+
+  const K_DATA = 'yoga-builder-v1', K_UI = 'yoga-builder-ui-v1';
+  const S = {
+    classes: [], curId: null, view: 'class', open: null,
+    q: '', cat: 'All', lvl: 0, avoid: [], confirmDel: null, sync: 'local', lastRemoved: null
+  };
+
+  /* ---------- storage ---------- */
+  function loadLocal() {
+    try { const r = JSON.parse(localStorage.getItem(K_DATA) || 'null'); if (r && Array.isArray(r.classes)) return r.classes; } catch (e) { /* storage unavailable */ }
+    return null;
+  }
+  function saveLocal() { try { localStorage.setItem(K_DATA, JSON.stringify({ classes: S.classes })); } catch (e) { /* ignore */ } }
+  function loadUi() {
+    try {
+      const u = JSON.parse(localStorage.getItem(K_UI) || 'null');
+      if (u) { S.lvl = u.lvl || 0; S.avoid = Array.isArray(u.avoid) ? u.avoid : []; S.curId = u.cur || null; }
+    } catch (e) { /* ignore */ }
+  }
+  function saveUi() { try { localStorage.setItem(K_UI, JSON.stringify({ lvl: S.lvl, avoid: S.avoid, cur: S.curId })); } catch (e) { /* ignore */ } }
+
+  const cloud = { coll: null, t: {}, busy: {}, dirty: {}, known: null };
+  function setSync(m) { S.sync = m; renderSaveState(); }
+  function renderSaveState() {
+    const el = $('#saveState'); if (!el) return;
+    const map = { cloud: 'Saved to your account', local: 'Saved on this device', error: 'Sync problem, saved on this device' };
+    el.textContent = map[S.sync] || '';
+    el.dataset.state = S.sync;
+  }
+  function queuePush(c) {
+    if (!cloud.coll) return;
+    clearTimeout(cloud.t[c.id]);
+    cloud.t[c.id] = setTimeout(() => flush(c.id), 900);
+  }
+  async function flush(id) {
+    if (!cloud.coll) return;
+    if (cloud.busy[id]) { cloud.dirty[id] = true; return; }
+    const c = S.classes.find(x => x.id === id); if (!c) return;
+    cloud.busy[id] = true;
+    try { await cloud.coll.doc(id).set(Object.assign({ kind: 'class' }, JSON.parse(JSON.stringify(c)))); setSync('cloud'); }
+    catch (e) { setSync('error'); }
+    cloud.busy[id] = false;
+    if (cloud.dirty[id]) { cloud.dirty[id] = false; flush(id); }
+  }
+  async function initCloud() {
+    try {
+      if (!window.claude || !window.claude.use) return;
+      const db = await window.claude.use('db'), user = await window.claude.use('user');
+      if (!db || !user) return;
+      const id = await user.id(); if (!id) return;
+      cloud.coll = db.collection('data/users/' + id);
+      cloud.coll.onSnapshot(snap => {
+        let changed = false;
+        const remote = new Set();
+        snap.docs.forEach(d => {
+          const x = d.data(); if (!x || x.kind !== 'class') return;
+          remote.add(d.id);
+          const loc = S.classes.find(c => c.id === d.id);
+          if (!loc) { S.classes.push(cleanClass(x, d.id)); changed = true; }
+          else if ((x.updated || 0) > (loc.updated || 0)) { Object.assign(loc, cleanClass(x, d.id)); changed = true; }
+        });
+        if (cloud.known === null) {
+          S.classes.forEach(c => { if (!remote.has(c.id)) queuePush(c); });
+        } else {
+          S.classes = S.classes.filter(c => { const gone = cloud.known.has(c.id) && !remote.has(c.id); if (gone) changed = true; return !gone; });
+        }
+        cloud.known = remote;
+        if (!S.classes.length) { S.classes.push(blankClass('Untitled class')); }
+        if (!S.classes.find(c => c.id === S.curId)) S.curId = S.classes[0].id;
+        if (changed) { saveLocal(); renderAll(); }
+        setSync('cloud');
+      }, () => setSync('error'));
+      setSync('cloud');
+    } catch (e) { /* stay local */ }
+  }
+  function cleanClass(x, id) {
+    return {
+      id: id || x.id, title: String(x.title || ''), focus: String(x.focus || ''), target: +x.target || 60,
+      items: Array.isArray(x.items) ? x.items.filter(i => i && (i.k !== 'pose' || POSE[i.p])).map(i => ({ u: i.u || uid(), k: i.k, p: i.p, t: i.t, s: +i.s || 30, b: !!i.b, n: i.n || '' })) : [],
+      created: x.created || Date.now(), updated: x.updated || Date.now()
+    };
+  }
+
+  /* ---------- model ---------- */
+  const cur = () => S.classes.find(c => c.id === S.curId);
+  const itemSecs = it => it.k === 'section' ? 0 : it.s * (it.b ? 2 : 1);
+  const total = c => c.items.reduce((a, i) => a + itemSecs(i), 0);
+  function blankClass(title, items) {
+    return { id: 'c-' + uid() + uid(), title: title || 'Untitled class', focus: '', target: 60, items: items || [], created: Date.now(), updated: Date.now() };
+  }
+  function fromTemplate(t) {
+    const items = t.items.map(r => r[0] === '#' ? { u: uid(), k: 'section', t: r[1], s: 0, b: false, n: '' } :
+      { u: uid(), k: 'pose', p: r[0], s: r[1], b: POSE[r[0]].sides, n: '' });
+    const c = blankClass(t.name, items);
+    const tt = total(c) / 60;
+    c.target = [20, 30, 45, 60, 75, 90].find(x => x >= tt - 3) || 90;
+    return c;
+  }
+  function touch() {
+    const c = cur(); if (!c) return;
+    c.updated = Date.now();
+    saveLocal(); queuePush(c); renderSaveState();
+  }
+  function poseItem(id) { const p = POSE[id]; return { u: uid(), k: 'pose', p: id, s: p.dur, b: p.sides, n: '' }; }
+  function counterFor(pid) { return ['bridge', 'fish'].includes(pid) ? 'knees-chest' : pid === 'up-dog' ? 'down-dog' : 'child'; }
+
+  function addPose(id, afterU, quiet) {
+    const c = cur(); const it = poseItem(id);
+    const i = afterU ? c.items.findIndex(x => x.u === afterU) : -1;
+    if (i >= 0) c.items.splice(i + 1, 0, it); else c.items.push(it);
+    touch(); renderClass(); renderLib(); renderTabs();
+    if (!quiet) toast('Added ' + POSE[id].name);
+    return it;
+  }
+
+  /* ---------- analysis ---------- */
+  function analyse(c) {
+    const poses = c.items.filter(i => i.k === 'pose');
+    const real = c.items.filter(i => i.k !== 'section');
+    const out = { total: total(c), n: poses.length, byCat: {}, lvl: [0, 0, 0, 0], issues: [], load: {} };
+    poses.forEach(i => {
+      const p = POSE[i.p], s = itemSecs(i);
+      out.byCat[p.cat] = (out.byCat[p.cat] || 0) + s;
+      out.lvl[p.lvl]++;
+      p.avoid.forEach(a => { out.load[a] = (out.load[a] || 0) + 1; });
+    });
+    const tgt = c.target * 60;
+    if (poses.length && out.total > tgt + 60) out.issues.push({ t: 'warn', m: 'The class runs ' + mins(out.total - tgt) + ' min over your ' + c.target + ' min target. Shorten some holds or drop a pose.' });
+    else if (poses.length && out.total < tgt - 180) out.issues.push({ t: 'info', m: mins(tgt - out.total) + ' min of space left before your target.' });
+    if (poses.length >= 3) {
+      const lastTwo = real.slice(-2);
+      if (!lastTwo.some(i => i.p === 'corpse')) out.issues.push({ t: 'warn', m: 'No final rest at the end.', fix: 'rest', label: 'Add Corpse' });
+      const firstThree = real.slice(0, 3);
+      if (firstThree.some(i => i.k === 'pose' && POSE[i.p].lvl === 3)) out.issues.push({ t: 'warn', m: 'An advanced pose comes in the first three steps. Warm up first.' });
+    }
+    real.forEach((it, idx) => {
+      if (it.k !== 'pose') return;
+      const p = POSE[it.p];
+      if (p.kind === 'back') {
+        const next = real.slice(idx + 1, idx + 4);
+        if (!next.some(n => n.k === 'pose' && COUNTERS.includes(n.p))) {
+          const cp = counterFor(it.p);
+          out.issues.push({ t: 'warn', m: p.name + ' has no counter-pose within the next three steps.', fix: 'counter', u: it.u, label: 'Add ' + POSE[cp].name });
+        }
+      }
+      if (p.sides && !it.b) out.issues.push({ t: 'info', m: p.name + ' is usually done on both sides.', fix: 'both', u: it.u, label: 'Both sides' });
+    });
+    return out;
+  }
+
+  /* ---------- toast ---------- */
+  let toastT;
+  function toast(msg, label, fn) {
+    const el = $('#toast');
+    el.innerHTML = '<span>' + esc(msg) + '</span>' + (label ? '<button data-act="toast-act">' + esc(label) + '</button>' : '');
+    el.classList.add('show'); toast.fn = fn;
+    clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), label ? 5500 : 1800);
+  }
+
+  /* ---------- rendering: library ---------- */
+  function matches(p) {
+    if (S.cat !== 'All' && p.cat !== S.cat) return false;
+    if (S.lvl && p.lvl !== S.lvl) return false;
+    if (S.q) {
+      const q = S.q.toLowerCase();
+      if (!(p.name + ' ' + p.sk + ' ' + p.cat + ' ' + p.focus.join(' ')).toLowerCase().includes(q)) return false;
+    }
+    return true;
+  }
+  const dots = n => '<span class="lv" title="' + LEVELS[n] + '" aria-label="' + LEVELS[n] + '">' + [1, 2, 3].map(i => '<i class="' + (i <= n ? 'on' : '') + '"></i>').join('') + '</span>';
+
+  function renderLib() {
+    $('#chips').innerHTML = ['All'].concat(CATS).map(c => {
+      const i = catIdx(c);
+      return '<button class="chip' + (S.cat === c ? ' on' : '') + '" data-act="cat" data-v="' + esc(c) + '">' + (i >= 0 ? '<span class="sw c' + i + '"></span>' : '') + esc(c) + '</button>';
+    }).join('');
+    $('#lvlSel').value = String(S.lvl);
+    $('#avoidChips').innerHTML = AVOID.map(a => '<button class="chip sm' + (S.avoid.includes(a) ? ' on' : '') + '" data-act="avoid" data-v="' + esc(a) + '" aria-pressed="' + S.avoid.includes(a) + '">' + esc(a) + '</button>').join('');
+    $('#avoidCount').textContent = S.avoid.length ? '(' + S.avoid.length + ' on)' : '';
+    const c = cur(); const counts = {};
+    c.items.forEach(i => { if (i.k === 'pose') counts[i.p] = (counts[i.p] || 0) + 1; });
+    let hidden = 0, html = '';
+    const groups = S.cat === 'All' ? CATS : [S.cat];
+    groups.forEach(cat => {
+      const list = POSES.filter(p => p.cat === cat && matches(p));
+      const shown = list.filter(p => !p.avoid.some(a => S.avoid.includes(a)));
+      hidden += list.length - shown.length;
+      if (!shown.length) return;
+      if (S.cat === 'All') html += '<h3 class="gh"><span class="sw c' + catIdx(cat) + '"></span>' + esc(cat) + '<span class="ct">' + shown.length + '</span></h3>';
+      html += '<div class="grid">' + shown.map(p => {
+        const n = counts[p.id];
+        return '<article class="pc" data-act="detail" data-id="' + p.id + '" tabindex="0" aria-label="' + esc(p.name) + ', open details">' +
+          '<div class="pfig">' + fig(p.id) + (n ? '<span class="inc">' + (n > 1 ? n + 'x ' : '') + 'in class</span>' : '') + '</div>' +
+          '<div class="pt"><b>' + esc(p.name) + '</b><i>' + esc(p.sk) + '</i></div>' +
+          '<div class="pf">' + dots(p.lvl) + '<button class="add" data-act="add" data-id="' + p.id + '" aria-label="Add ' + esc(p.name) + ' to class">' + ic('plus', 18) + '</button></div></article>';
+      }).join('') + '</div>';
+    });
+    if (!html) html = '<p class="empty-note">No poses match. Clear the search or loosen the filters.</p>';
+    $('#grid').innerHTML = html;
+    $('#hiddenNote').textContent = hidden ? hidden + ' pose' + (hidden > 1 ? 's' : '') + ' hidden by your avoid filters.' : '';
+  }
+
+  /* ---------- rendering: class ---------- */
+  function renderTabs() {
+    $('#app').dataset.view = S.view;
+    $$('#tabs [data-view]').forEach(b => b.setAttribute('aria-current', b.dataset.view === S.view ? 'page' : 'false'));
+    const c = cur();
+    const n = c.items.filter(i => i.k !== 'section').length;
+    $('#tabBadge').textContent = n ? fmt(total(c)) : '';
+  }
+
+  function renderClass() {
+    const c = cur(); if (!c) return;
+    const a = analyse(c);
+    const tgt = c.target * 60;
+    const pct = Math.min(100, tgt ? a.total / tgt * 100 : 0);
+    const over = a.total > tgt + 60;
+    const sel = $('#clsTarget');
+    if (!Array.from(sel.options).some(o => +o.value === c.target)) sel.add(new Option(c.target + ' min', c.target));
+    sel.value = String(c.target);
+
+    let seg = '', legend = '';
+    CATS.forEach((cat, i) => {
+      const v = a.byCat[cat]; if (!v) return;
+      seg += '<span class="c' + i + '" style="flex:' + v + '" title="' + esc(cat) + ' ' + fmt(v) + '"></span>';
+      legend += '<li><span class="sw c' + i + '"></span>' + esc(cat) + ' <b>' + mins(v) + ' min</b></li>';
+    });
+    const loads = Object.keys(a.load).sort((x, y) => a.load[y] - a.load[x]).slice(0, 5);
+    let sum = '<div class="tot"><div><span class="big">' + fmt(a.total) + '</span><span class="of"> of ' + c.target + ':00 target</span></div><div class="cnt">' + a.n + ' pose' + (a.n === 1 ? '' : 's') + '</div></div>' +
+      '<div class="meter' + (over ? ' over' : '') + '" role="progressbar" aria-valuemin="0" aria-valuemax="' + tgt + '" aria-valuenow="' + a.total + '"><span style="width:' + pct + '%"></span></div>';
+    if (seg) sum += '<div class="mix" aria-hidden="true">' + seg + '</div><ul class="legend">' + legend + '</ul>';
+    if (a.n) {
+      const lv = [1, 2, 3].filter(i => a.lvl[i]).map(i => a.lvl[i] + ' ' + LEVELS[i].toLowerCase()).join(' · ');
+      sum += '<p class="minor">' + lv + (loads.length ? '<br>Loads: ' + loads.map(l => esc(l) + ' (' + a.load[l] + ')').join(', ') : '') + '</p>';
+    }
+    if (a.issues.length) {
+      sum += '<ul class="issues">' + a.issues.map(i => '<li class="' + i.t + '">' + ic(i.t === 'warn' ? 'warn' : 'info', 16) + '<span>' + esc(i.m) + '</span>' +
+        (i.fix ? '<button class="mini" data-act="fix" data-fix="' + i.fix + '"' + (i.u ? ' data-u="' + i.u + '"' : '') + '>' + esc(i.label) + '</button>' : '') + '</li>').join('') + '</ul>';
+    } else if (a.n >= 3) {
+      sum += '<ul class="issues"><li class="ok">' + ic('check', 16) + '<span>No problems found with the sequence.</span></li></ul>';
+    }
+    $('#summary').innerHTML = sum;
+
+    /* items */
+    const list = $('#items');
+    if (!c.items.length) {
+      list.innerHTML = '<li class="empty"><b>Start your class</b><p>Pick poses from the library, or begin with a template.</p>' +
+        '<div class="row-btns"><button class="btn" data-act="templates">Use a template</button><button class="btn ghost only-m" data-act="goto" data-v="lib">Browse poses</button></div></li>';
+    } else {
+      let t = 0, secStart = -1, html = '', idx = 0;
+      const subtotals = {};
+      let curSec = null;
+      c.items.forEach(it => {
+        if (it.k === 'section') { curSec = it.u; subtotals[curSec] = 0; } else if (curSec) subtotals[curSec] += itemSecs(it);
+      });
+      c.items.forEach((it, i) => {
+        const open = S.open === it.u;
+        const first = i === 0, last = i === c.items.length - 1;
+        const mv = '<button class="ib" data-act="up" data-u="' + it.u + '" aria-label="Move up"' + (first ? ' disabled' : '') + '>' + ic('up') + '</button>' +
+          '<button class="ib" data-act="down" data-u="' + it.u + '" aria-label="Move down"' + (last ? ' disabled' : '') + '>' + ic('down') + '</button>';
+        if (it.k === 'section') {
+          html += '<li class="sec" data-u="' + it.u + '"><input class="sec-in" data-act="sec" data-u="' + it.u + '" value="' + esc(it.t) + '" aria-label="Section name" maxlength="40">' +
+            '<span class="subt">' + fmt(subtotals[it.u] || 0) + '</span>' + mv +
+            '<button class="ib" data-act="del" data-u="' + it.u + '" aria-label="Remove section">' + ic('x') + '</button></li>';
+          return;
+        }
+        idx++;
+        const p = it.k === 'pose' ? POSE[it.p] : null;
+        const secs = itemSecs(it);
+        const sub = p ? esc(p.sk) : 'Custom step';
+        const note = it.n ? '<span class="nt">' + esc(it.n) + '</span>' : '';
+        html += '<li class="it' + (open ? ' open' : '') + '" data-u="' + it.u + '">' +
+          '<button class="row" data-act="toggle" data-u="' + it.u + '" aria-expanded="' + open + '">' +
+          '<span class="n">' + idx + '</span>' +
+          '<span class="th">' + (p ? fig(p.id) : '<span class="cust">' + ic('text', 22) + '</span>') + '</span>' +
+          '<span class="tx"><b>' + esc(p ? p.name : (it.t || 'Custom step')) + '</b><span class="sub">' + sub + '</span>' + note + '</span>' +
+          '<span class="tm"><b>' + fmt(secs) + '</b><span>' + (it.b ? '2 sides' : 'at ' + fmt(t)) + '</span></span></button>';
+        if (open) {
+          html += '<div class="ctl">' +
+            (p ? '' : '<label class="fld"><span>Name</span><input data-act="label" data-u="' + it.u + '" value="' + esc(it.t) + '" maxlength="60"></label>') +
+            '<div class="ctl-row"><div class="stepper" role="group" aria-label="Hold time"><button data-act="dec" data-u="' + it.u + '" aria-label="Shorter">' + ic('minus') + '</button>' +
+            '<output>' + fmt(it.s) + (it.b ? ' <small>per side</small>' : '') + '</output><button data-act="inc" data-u="' + it.u + '" aria-label="Longer">' + ic('plus') + '</button></div>' +
+            (p ? '<label class="tog"><input type="checkbox" data-act="both" data-u="' + it.u + '"' + (it.b ? ' checked' : '') + '> Both sides</label>' : '') + '</div>' +
+            '<label class="fld"><span>Note to self</span><input data-act="note" data-u="' + it.u + '" value="' + esc(it.n) + '" placeholder="Cue, prop, or how you flow in" maxlength="140"></label>' +
+            '<div class="ctl-row acts">' + mv + '<button class="ib" data-act="dup" data-u="' + it.u + '" aria-label="Duplicate">' + ic('copy') + '</button>' +
+            '<button class="ib danger" data-act="del" data-u="' + it.u + '" aria-label="Remove">' + ic('trash') + '</button>' +
+            (p ? '<button class="mini" data-act="info" data-id="' + p.id + '">Pose details</button>' : '') + '</div></div>';
+        }
+        html += '</li>';
+        t += secs;
+      });
+      list.innerHTML = html;
+    }
+    renderSaveState();
+  }
+
+  function setClassFields() {
+    const c = cur();
+    $('#clsTitle').value = c.title; $('#clsFocus').value = c.focus || '';
+  }
+
+  /* ---------- rendering: saved ---------- */
+  function renderSaved() {
+    const list = S.classes.slice().sort((a, b) => b.updated - a.updated);
+    $('#savedList').innerHTML = list.map(c => {
+      const n = c.items.filter(i => i.k === 'pose').length;
+      const d = new Date(c.updated).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+      const del = S.confirmDel === c.id;
+      return '<li class="sc' + (c.id === S.curId ? ' cur' : '') + '"><div class="sc-main"><b>' + esc(c.title || 'Untitled class') + '</b>' +
+        '<span>' + fmt(total(c)) + ' · ' + n + ' pose' + (n === 1 ? '' : 's') + ' · edited ' + d + '</span>' + (c.focus ? '<span class="fo">' + esc(c.focus) + '</span>' : '') + '</div>' +
+        '<div class="sc-act">' + (del ? '<span class="cf">Delete this class?</span><button class="btn danger sm" data-act="del-yes" data-id="' + c.id + '">Delete</button><button class="btn ghost sm" data-act="del-no">Keep</button>' :
+          '<button class="btn sm" data-act="open-class" data-id="' + c.id + '">' + (c.id === S.curId ? 'Editing' : 'Open') + '</button>' +
+          '<button class="ib" data-act="dup-class" data-id="' + c.id + '" aria-label="Duplicate class">' + ic('copy') + '</button>' +
+          '<button class="ib danger" data-act="del-ask" data-id="' + c.id + '" aria-label="Delete class">' + ic('trash') + '</button>') + '</div></li>';
+    }).join('');
+  }
+
+  function renderAll() { renderTabs(); renderLib(); setClassFields(); renderClass(); renderSaved(); renderSaveState(); }
+
+  /* ---------- sheets ---------- */
+  function openSheet(html, cls) {
+    const el = $('#sheet');
+    el.innerHTML = '<div class="sheet ' + (cls || '') + '" role="dialog" aria-modal="true">' + html + '</div>';
+    el.hidden = false; document.body.classList.add('lock');
+    const f = el.querySelector('[data-focus]') || el.querySelector('button'); if (f) f.focus();
+  }
+  function closeSheet() { const el = $('#sheet'); el.hidden = true; el.innerHTML = ''; document.body.classList.remove('lock'); }
+
+  function openDetail(id) {
+    const p = POSE[id]; const ci = catIdx(p.cat);
+    const cp = p.kind === 'back' ? counterFor(id) : null;
+    openSheet('<button class="x" data-act="close" aria-label="Close">' + ic('x') + '</button>' +
+      '<div class="dfig">' + fig(id) + '</div>' +
+      '<h2>' + esc(p.name) + '</h2><p class="sk">' + esc(p.sk) + '</p>' +
+      '<p class="tags"><span class="tag"><span class="sw c' + ci + '"></span>' + esc(p.cat) + '</span><span class="tag">' + LEVELS[p.lvl] + '</span>' +
+      '<span class="tag">' + (p.sides ? 'Both sides' : 'One pose') + ' · ' + fmt(p.dur) + (p.sides ? ' each' : '') + '</span>' +
+      p.focus.map(f => '<span class="tag soft">' + esc(f) + '</span>').join('') + '</p>' +
+      '<p>' + esc(p.ben) + '</p><h4>Cues</h4><ul class="cues">' + p.cues.map(c => '<li>' + esc(c) + '</li>').join('') + '</ul>' +
+      (p.avoid.length ? '<h4>Take care with</h4><p class="tags">' + p.avoid.map(a => '<span class="tag warn">' + esc(a) + '</span>').join('') + '</p>' : '') +
+      (cp ? '<h4>Counter-pose</h4><p class="minor">Follow this with ' + esc(POSE[cp].name) + ' or another forward fold.</p>' : '') +
+      '<div class="sheet-act"><button class="btn primary" data-act="add-close" data-id="' + id + '" data-focus>Add to class</button>' +
+      (cp ? '<button class="btn" data-act="add-counter" data-id="' + id + '">Add with ' + esc(POSE[cp].name) + '</button>' : '') + '</div>');
+  }
+
+  function openTemplates() {
+    openSheet('<button class="x" data-act="close" aria-label="Close">' + ic('x') + '</button><h2>Start a new class</h2>' +
+      '<ul class="tpls">' + TEMPLATES.map(t => {
+        const c = fromTemplate(t);
+        return '<li><button class="tpl" data-act="tpl" data-id="' + t.id + '"><b>' + esc(t.name) + '</b><span>' + esc(t.blurb) + '</span><em>' + mins(total(c)) + ' min · ' + c.items.filter(i => i.k === 'pose').length + ' poses</em></button></li>';
+      }).join('') + '<li><button class="tpl blank" data-act="tpl" data-id="blank" data-focus><b>Blank class</b><span>Build the sequence from scratch.</span></button></li></ul>');
+  }
+
+  function planText(c) {
+    const lines = [c.title || 'Untitled class'];
+    if (c.focus) lines.push('Focus: ' + c.focus);
+    const poses = c.items.filter(i => i.k === 'pose').length;
+    lines.push('Planned ' + fmt(total(c)) + ' of ' + c.target + ' min target · ' + poses + ' poses', '');
+    let t = 0;
+    c.items.forEach(it => {
+      if (it.k === 'section') { lines.push('', '== ' + it.t + ' =='); return; }
+      const p = it.k === 'pose' ? POSE[it.p] : null;
+      const name = p ? p.name + ' (' + p.sk + ')' : (it.t || 'Custom step');
+      lines.push(fmt(t).padStart(5) + '  ' + name + ' · ' + fmt(it.s) + (it.b ? ' each side' : ''));
+      if (it.n) lines.push('       ' + it.n);
+      t += itemSecs(it);
+    });
+    return lines.join('\n').replace(/\n{3,}/g, '\n\n');
+  }
+  /* ---------- PDF export ---------- */
+  const latin = s => String(s == null ? '' : s).replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/[–—]/g, '-').replace(/[^\x20-\xff]/g, '');
+  const FIG_CSS = '.near{fill:none;stroke:#1f6f5c;stroke-width:.15;stroke-linecap:round;stroke-linejoin:round}' +
+    '.far{fill:none;stroke:#8fbfb2;stroke-width:.15;stroke-linecap:round;stroke-linejoin:round}' +
+    '.gr{stroke:#c9cfc8;stroke-width:.06;stroke-linecap:round}.hd{fill:#1f6f5c}';
+  function rasterFig(id) {
+    return new Promise(res => {
+      try {
+        const svg = fig(id).replace('<svg', '<svg width="300" height="236"').replace('>', '><style>' + FIG_CSS + '</style>');
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const cv = document.createElement('canvas'); cv.width = 300; cv.height = 236;
+            const g = cv.getContext('2d'); g.fillStyle = '#f4f6f3'; g.fillRect(0, 0, 300, 236); g.drawImage(img, 0, 0, 300, 236);
+            res(cv.toDataURL('image/jpeg', .9));
+          } catch (e) { res(null); }
+        };
+        img.onerror = () => res(null);
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+      } catch (e) { res(null); }
+    });
+  }
+  async function buildPdf(c) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const W = 210, H = 297, M = 16, TX = M + 32;
+    const ids = Array.from(new Set(c.items.filter(i => i.k === 'pose').map(i => i.p)));
+    const imgs = {};
+    await Promise.all(ids.map(async id => { imgs[id] = await rasterFig(id); }));
+    let y = M;
+    const need = h => { if (y + h > H - 16) { doc.addPage(); y = M; } };
+    const wrap = (s, w) => doc.splitTextToSize(latin(s), w);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(20); doc.setTextColor(23, 37, 42);
+    const tl = wrap(c.title || 'Untitled class', W - 2 * M);
+    doc.text(tl, M, y + 6); y += 6 + (tl.length - 1) * 8;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(95, 107, 110);
+    const npose = c.items.filter(i => i.k === 'pose').length;
+    const meta = [c.focus ? 'Focus: ' + c.focus : '', fmt(total(c)) + ' planned of ' + c.target + ' min', npose + ' poses'].filter(Boolean).join('   |   ');
+    y += 6; doc.text(wrap(meta, W - 2 * M), M, y); y += 8;
+    let t = 0;
+    c.items.forEach(it => {
+      if (it.k === 'section') {
+        need(22); y += 3;
+        doc.setFillColor(31, 111, 92); doc.rect(M, y, W - 2 * M, 7, 'F');
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(255, 255, 255);
+        doc.text(latin(it.t || 'Section').toUpperCase(), M + 3, y + 4.8); y += 10; return;
+      }
+      const p = it.k === 'pose' ? POSE[it.p] : null;
+      const hold = fmt(it.s) + (it.b ? ' each side (' + fmt(itemSecs(it)) + ' total)' : '');
+      const cues = p ? p.cues.slice(0, 2).map(q => wrap('- ' + q, W - M - TX)).flat() : [];
+      const note = it.n ? wrap('Note: ' + it.n, W - M - TX) : [];
+      const h = Math.max(p ? 24 : 12, 13 + cues.length * 4 + note.length * 4.2);
+      need(h + 2);
+      doc.setDrawColor(215, 221, 217); doc.setLineWidth(.2); doc.line(M, y + h, W - M, y + h);
+      if (p && imgs[it.p]) doc.addImage(imgs[it.p], 'JPEG', M + 8, y + 1, 24, 18.9, it.p);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(120, 130, 132);
+      doc.text(fmt(t), M, y + 5);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(11.5); doc.setTextColor(23, 37, 42);
+      doc.text(latin(p ? p.name : (it.t || 'Custom step')), p ? TX + 4 : M + 8, y + 5);
+      const x0 = p ? TX + 4 : M + 8;
+      let yy = y + 5;
+      if (p) { doc.setFont('helvetica', 'italic'); doc.setFontSize(9); doc.setTextColor(95, 107, 110); yy += 4.5; doc.text(latin(p.sk), x0, yy); }
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(31, 111, 92); yy += 4.6; doc.text(latin(hold), x0, yy);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(80, 92, 95);
+      cues.forEach(l => { yy += 4; doc.text(l, x0, yy); });
+      doc.setFont('helvetica', 'italic'); doc.setTextColor(23, 37, 42);
+      note.forEach(l => { yy += 4.2; doc.text(l, x0, yy); });
+      y += h + 2; t += itemSecs(it);
+    });
+    const load = {};
+    c.items.forEach(it => { if (it.k === 'pose') POSE[it.p].avoid.forEach(a => { (load[a] = load[a] || []).push(POSE[it.p].name); }); });
+    const keys = Object.keys(load);
+    if (keys.length) {
+      need(20); y += 4;
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(23, 37, 42); doc.text('Offer options for students with', M, y); y += 5;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(80, 92, 95);
+      keys.sort((a, b) => load[b].length - load[a].length).forEach(k => {
+        const names = Array.from(new Set(load[k]));
+        const ls = wrap(k.charAt(0).toUpperCase() + k.slice(1) + ': ' + names.join(', '), W - 2 * M);
+        need(ls.length * 4 + 1); doc.text(ls, M, y); y += ls.length * 4 + 1;
+      });
+    }
+    const n = doc.getNumberOfPages();
+    for (let i = 1; i <= n; i++) {
+      doc.setPage(i); doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(140, 148, 150);
+      doc.text(latin(c.title || 'Class') + '  -  page ' + i + ' of ' + n, W / 2, H - 8, { align: 'center' });
+    }
+    return doc.output('blob');
+  }
+  function openExport() {
+    const c = cur(); const txt = planText(c);
+    openSheet('<button class="x" data-act="close" aria-label="Close">' + ic('x') + '</button><h2>Class plan</h2>' +
+      '<textarea id="planTxt" readonly rows="14" aria-label="Class plan text">' + esc(txt) + '</textarea>' +
+      '<div class="sheet-act"><button class="btn primary" data-act="save-pdf" id="savePdf" hidden>' + ic('dl', 16) + ' Save PDF</button>' +
+      '<button class="btn" data-act="copy-plan" data-focus>' + ic('copy', 16) + ' Copy text</button>' +
+      '<button class="btn" data-act="save-plan" id="savePlan" hidden>' + ic('dl', 16) + ' Save text</button></div><p class="minor" id="exportMsg"></p>');
+    const reveal = () => {
+      if ($('#savePlan')) $('#savePlan').hidden = false;
+      if ($('#savePdf') && window.jspdf) $('#savePdf').hidden = false;
+    };
+    if (window.claude && window.claude.use) window.claude.use('downloads').then(d => { if (d) reveal(); }).catch(() => { });
+    else reveal();
+  }
+  /* Saves a file through the host when one offers it, otherwise with an ordinary browser download. */
+  function saveFile(name, data, mime) {
+    const host = window.claude && window.claude.use ? window.claude.use('downloads') : Promise.resolve(null);
+    return host.then(d => {
+      if (d) return d.save({ filename: name, data: data });
+      const blob = data instanceof Blob ? data : new Blob([data], { type: mime || 'text/plain' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    });
+  }
+
+  /* ---------- teach mode ---------- */
+  let T = null, wake = null;
+  function buildSteps(c) {
+    const steps = []; let sec = '';
+    c.items.forEach(it => {
+      if (it.k === 'section') { sec = it.t; return; }
+      if (it.k === 'pose') {
+        const p = POSE[it.p], n = it.b ? 2 : 1;
+        for (let i = 0; i < n; i++) steps.push({ id: p.id, label: p.name, sk: p.sk, secs: it.s, side: n > 1 ? i + 1 : 0, sec, cues: p.cues, note: it.n });
+      } else steps.push({ id: null, label: it.t || 'Custom step', sk: '', secs: it.s, side: 0, sec, cues: [], note: it.n });
+    });
+    return steps;
+  }
+  function openTeach() {
+    const steps = buildSteps(cur());
+    if (!steps.length) { toast('Add a few poses first'); return; }
+    T = { steps, i: 0, left: steps[0].secs, running: false, endAt: 0, timer: null, done: false };
+    $('#teach').hidden = false; document.body.classList.add('lock');
+    renderTeach();
+    try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(w => { wake = w; }).catch(() => { }); } catch (e) { /* optional */ }
+  }
+  function closeTeach() {
+    if (T && T.timer) clearInterval(T.timer);
+    T = null; $('#teach').hidden = true; $('#teach').innerHTML = ''; document.body.classList.remove('lock');
+    try { if (wake) wake.release(); } catch (e) { /* ignore */ } wake = null;
+  }
+  function remainingAll() { let r = T.left; for (let k = T.i + 1; k < T.steps.length; k++) r += T.steps[k].secs; return r; }
+  function renderTeach() {
+    if (!T) return; const el = $('#teach');
+    if (T.done) {
+      el.innerHTML = '<div class="tc"><div class="tc-top"><button class="btn ghost" data-act="tclose">Close</button></div><div class="tc-done"><h2>Class complete</h2><p>' + esc(cur().title || 'Untitled class') + ' · ' + fmt(total(cur())) + '</p><button class="btn primary" data-act="trestart">Run again</button></div></div>';
+      return;
+    }
+    const s = T.steps[T.i], nx = T.steps[T.i + 1];
+    const pct = (T.i / T.steps.length) * 100;
+    el.innerHTML = '<div class="tc"><div class="tc-top"><button class="btn ghost" data-act="tclose">' + ic('x', 16) + ' Close</button>' +
+      '<span class="tc-pos">Step ' + (T.i + 1) + ' of ' + T.steps.length + '</span><span class="tc-rem" id="tRem">' + fmt(remainingAll()) + ' left</span></div>' +
+      '<div class="meter thin"><span style="width:' + pct + '%"></span></div>' +
+      (s.sec ? '<p class="tc-sec">' + esc(s.sec) + '</p>' : '') +
+      '<div class="tc-fig' + (s.side === 2 ? ' mirror' : '') + '">' + (s.id ? fig(s.id) : '<div class="cust big">' + ic('text', 56) + '</div>') + '</div>' +
+      '<h2 class="tc-name">' + esc(s.label) + '</h2>' +
+      '<p class="tc-sub">' + esc(s.sk) + (s.side ? '<span class="side">Side ' + s.side + ' of 2</span>' : '') + '</p>' +
+      (s.cues.length ? '<ul class="tc-cues">' + s.cues.map(c => '<li>' + esc(c) + '</li>').join('') + '</ul>' : '') +
+      (s.note ? '<p class="tc-note">' + esc(s.note) + '</p>' : '') +
+      '<div class="tc-time" id="tTime" aria-live="off">' + fmt(T.left) + '</div>' +
+      '<div class="meter thin step"><span id="tBar" style="width:' + ((s.secs - T.left) / s.secs * 100) + '%"></span></div>' +
+      '<div class="tc-ctl"><button class="rb" data-act="tprev" aria-label="Previous step">' + ic('back', 22) + '</button>' +
+      '<button class="rb big" data-act="tplay" aria-label="' + (T.running ? 'Pause' : 'Start') + '">' + ic(T.running ? 'pause' : 'play', 28) + '</button>' +
+      '<button class="rb" data-act="tnext" aria-label="Next step">' + ic('fwd', 22) + '</button></div>' +
+      '<p class="tc-next">' + (nx ? 'Next: <b>' + esc(nx.label) + '</b>' + (nx.side ? ' (side ' + nx.side + ')' : '') + ' · ' + fmt(nx.secs) : 'Last step') + '</p></div>';
+  }
+  function tGo(i) {
+    if (!T) return;
+    if (i >= T.steps.length) { T.done = true; T.running = false; clearInterval(T.timer); T.timer = null; renderTeach(); return; }
+    T.i = Math.max(0, i); T.left = T.steps[T.i].secs; T.endAt = Date.now() + T.left * 1000; renderTeach();
+  }
+  function tTick() {
+    if (!T || !T.running) return;
+    T.left = Math.max(0, Math.ceil((T.endAt - Date.now()) / 1000));
+    const tt = $('#tTime'); if (tt) tt.textContent = fmt(T.left);
+    const bar = $('#tBar'); const s = T.steps[T.i]; if (bar) bar.style.width = ((s.secs - T.left) / s.secs * 100) + '%';
+    const rem = $('#tRem'); if (rem) rem.textContent = fmt(remainingAll()) + ' left';
+    if (T.left <= 0) tGo(T.i + 1);
+  }
+  function tPlay() {
+    if (!T) return;
+    T.running = !T.running;
+    if (T.running) { T.endAt = Date.now() + T.left * 1000; if (!T.timer) T.timer = setInterval(tTick, 250); }
+    renderTeach();
+  }
+
+  /* ---------- actions ---------- */
+  function move(u, dir) {
+    const c = cur(); const i = c.items.findIndex(x => x.u === u); const j = i + dir;
+    if (i < 0 || j < 0 || j >= c.items.length) return;
+    const t = c.items[i]; c.items[i] = c.items[j]; c.items[j] = t;
+    touch(); renderClass();
+  }
+  function stepFor(s, dir) {
+    const d = dir < 0 ? (s <= 120 ? 15 : s <= 600 ? 30 : 60) : (s < 120 ? 15 : s < 600 ? 30 : 60);
+    return Math.max(10, Math.min(1800, s + dir * d));
+  }
+  function newClass(c) {
+    S.classes.push(c); S.curId = c.id; S.open = null; saveUi(); saveLocal(); queuePush(c);
+    S.view = 'class'; renderAll(); window.scrollTo({ top: 0 });
+  }
+
+  function onClick(e) {
+    const t = e.target.closest('[data-act]'); if (!t) {
+      if (e.target.id === 'sheet') closeSheet();
+      return;
+    }
+    const act = t.dataset.act, u = t.dataset.u, id = t.dataset.id, c = cur();
+    const item = u ? c.items.find(x => x.u === u) : null;
+    switch (act) {
+      case 'detail': if (!e.target.closest('.add')) openDetail(id); break;
+      case 'add': addPose(id); break;
+      case 'add-close': addPose(id); closeSheet(); break;
+      case 'add-counter': addPose(id, null, true); addPose(counterFor(id), null, true); closeSheet(); toast('Added ' + POSE[id].name + ' and ' + POSE[counterFor(id)].name); break;
+      case 'info': openDetail(id); break;
+      case 'close': closeSheet(); break;
+      case 'cat': S.cat = t.dataset.v; renderLib(); break;
+      case 'avoid': { const v = t.dataset.v; S.avoid = S.avoid.includes(v) ? S.avoid.filter(x => x !== v) : S.avoid.concat(v); saveUi(); renderLib(); break; }
+      case 'toggle': S.open = S.open === u ? null : u; renderClass(); break;
+      case 'inc': item.s = stepFor(item.s, 1); touch(); renderClass(); refocus(u, 'inc'); break;
+      case 'dec': item.s = stepFor(item.s, -1); touch(); renderClass(); refocus(u, 'dec'); break;
+      case 'up': move(u, -1); refocus(u, 'up'); break;
+      case 'down': move(u, 1); refocus(u, 'down'); break;
+      case 'dup': { const i = c.items.indexOf(item); const cp = Object.assign({}, item, { u: uid() }); c.items.splice(i + 1, 0, cp); S.open = cp.u; touch(); renderClass(); renderLib(); renderTabs(); break; }
+      case 'del': {
+        const i = c.items.indexOf(item); c.items.splice(i, 1); if (S.open === u) S.open = null;
+        S.lastRemoved = { item, i, cid: c.id }; touch(); renderClass(); renderLib(); renderTabs();
+        toast('Removed ' + (item.k === 'pose' ? POSE[item.p].name : item.k === 'section' ? 'section' : 'step'), 'Undo', () => {
+          const r = S.lastRemoved; const cc = S.classes.find(x => x.id === r.cid); if (!cc) return;
+          cc.items.splice(Math.min(r.i, cc.items.length), 0, r.item); S.lastRemoved = null; touch(); renderClass(); renderLib(); renderTabs();
+        }); break;
+      }
+      case 'toast-act': if (toast.fn) toast.fn(); $('#toast').classList.remove('show'); break;
+      case 'fix': {
+        const f = t.dataset.fix;
+        if (f === 'rest') addPose('corpse', null, true);
+        else if (f === 'counter') addPose(counterFor(item.p), u, true);
+        else if (f === 'both') { item.b = true; touch(); renderClass(); renderTabs(); }
+        break;
+      }
+      case 'add-section': { const it = { u: uid(), k: 'section', t: 'New section', s: 0, b: false, n: '' }; c.items.push(it); touch(); renderClass(); const inp = document.querySelector('[data-u="' + it.u + '"] .sec-in'); if (inp) { inp.focus(); inp.select(); } break; }
+      case 'add-step': { const it = { u: uid(), k: 'custom', t: 'Breathwork', s: 120, b: false, n: '' }; c.items.push(it); S.open = it.u; touch(); renderClass(); renderTabs(); break; }
+      case 'templates': openTemplates(); break;
+      case 'tpl': { closeSheet(); const tp = TEMPLATES.find(x => x.id === id); newClass(tp ? fromTemplate(tp) : blankClass('Untitled class')); break; }
+      case 'new': openTemplates(); break;
+      case 'export': openExport(); break;
+      case 'copy-plan': {
+        const ta = $('#planTxt'); const msg = $('#exportMsg');
+        const fallback = () => { ta.focus(); ta.select(); try { document.execCommand('copy'); msg.textContent = 'Copied.'; } catch (er) { msg.textContent = 'Select the text and copy it.'; } };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(ta.value).then(() => { msg.textContent = 'Copied.'; }).catch(fallback); else fallback();
+        break;
+      }
+      case 'save-plan': {
+        const msg = $('#exportMsg'); const name = ((c.title || 'class').replace(/[^\w\- ]+/g, '').trim() || 'class') + '.txt';
+        saveFile(name, $('#planTxt').value, 'text/plain').then(() => { msg.textContent = 'Saved.'; }).catch(er => { msg.textContent = er && er.code === 'declined' ? 'Save cancelled.' : 'Saving is not available here. Use Copy text.'; });
+        break;
+      }
+      case 'save-pdf': {
+        const msg = $('#exportMsg'); const name = ((c.title || 'class').replace(/[^\w\- ]+/g, '').trim() || 'class') + '.pdf';
+        msg.textContent = 'Building the PDF…';
+        buildPdf(c).then(blob => saveFile(name, blob))
+          .then(() => { msg.textContent = 'Saved.'; })
+          .catch(er => { msg.textContent = er && er.code === 'declined' ? 'Save cancelled.' : 'Couldn\'t save the PDF here. Use Copy text instead.'; });
+        break;
+      }
+      case 'teach': openTeach(); break;
+      case 'tclose': closeTeach(); break;
+      case 'tplay': tPlay(); break;
+      case 'tnext': tGo(T.i + 1); break;
+      case 'tprev': tGo(T.i - 1); break;
+      case 'trestart': T.done = false; tGo(0); break;
+      case 'goto': S.view = t.dataset.v; renderTabs(); window.scrollTo({ top: 0 }); break;
+      case 'open-class': S.curId = id; S.open = null; saveUi(); S.view = 'class'; renderAll(); window.scrollTo({ top: 0 }); break;
+      case 'dup-class': { const src = S.classes.find(x => x.id === id); const cp = JSON.parse(JSON.stringify(src)); cp.id = 'c-' + uid() + uid(); cp.title = (src.title || 'Untitled class') + ' (copy)'; cp.items.forEach(i => { i.u = uid(); }); cp.created = cp.updated = Date.now(); newClass(cp); toast('Duplicated'); break; }
+      case 'del-ask': S.confirmDel = id; renderSaved(); break;
+      case 'del-no': S.confirmDel = null; renderSaved(); break;
+      case 'del-yes': {
+        S.classes = S.classes.filter(x => x.id !== id); S.confirmDel = null;
+        if (cloud.coll) { cloud.coll.doc(id).delete().catch(() => { }); }
+        if (!S.classes.length) S.classes.push(blankClass('Untitled class'));
+        if (S.curId === id) { S.curId = S.classes[0].id; S.open = null; }
+        saveLocal(); saveUi(); renderAll(); toast('Class deleted'); break;
+      }
+      default: break;
+    }
+  }
+  function refocus(u, act) { const b = document.querySelector('[data-u="' + u + '"][data-act="' + act + '"]'); if (b && !b.disabled) b.focus(); }
+
+  function onInput(e) {
+    const t = e.target, act = t.dataset && t.dataset.act, c = cur();
+    if (t.id === 'clsTitle') { c.title = t.value; touch(); return; }
+    if (t.id === 'clsFocus') { c.focus = t.value; touch(); return; }
+    if (t.id === 'search') { S.q = t.value.trim(); renderLib(); return; }
+    if (!act) return;
+    const item = c.items.find(x => x.u === t.dataset.u);
+    if (act === 'note' && item) { item.n = t.value; touch(); }
+    else if (act === 'label' && item) { item.t = t.value; touch(); }
+    else if (act === 'sec' && item) { item.t = t.value; touch(); }
+  }
+  function onChange(e) {
+    const t = e.target, act = t.dataset && t.dataset.act, c = cur();
+    if (t.id === 'clsTarget') { c.target = +t.value; touch(); renderClass(); return; }
+    if (t.id === 'lvlSel') { S.lvl = +t.value; saveUi(); renderLib(); return; }
+    if (!act) return;
+    const item = c.items.find(x => x.u === t.dataset.u);
+    if (act === 'both' && item) { item.b = t.checked; touch(); renderClass(); renderTabs(); }
+    else if (act === 'note' || act === 'label' || act === 'sec') { renderClass(); }
+  }
+
+  document.addEventListener('click', onClick);
+  document.addEventListener('input', onInput);
+  document.addEventListener('change', onChange);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { if (!$('#sheet').hidden) closeSheet(); else if (T) closeTeach(); }
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('pc')) { e.preventDefault(); openDetail(e.target.dataset.id); }
+    if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('sec-in')) e.target.blur();
+  });
+  $$('#tabs [data-view]').forEach(b => b.addEventListener('click', () => { S.view = b.dataset.view; if (S.view === 'saved') renderSaved(); renderTabs(); window.scrollTo({ top: 0 }); }));
+
+  /* ---------- boot ---------- */
+  function boot() {
+    $$('[data-ic]').forEach(el => { el.insertAdjacentHTML('afterbegin', ic(el.dataset.ic, 20)); });
+    loadUi();
+    let list = loadLocal();
+    if (!list || !list.length) {
+      const ex = fromTemplate(TEMPLATES[0]); ex.title = 'Example class: Gentle hatha';
+      list = [ex];
+    }
+    S.classes = list.map(x => cleanClass(x, x.id));
+    if (!S.classes.find(c => c.id === S.curId)) S.curId = S.classes[0].id;
+    saveLocal();
+    renderAll();
+    initCloud();
+  }
+  window.__yoga = { S, analyse, planText };
+  boot();
+})();
+
+const APP_VERSION = '0.1.0';
+document.getElementById('ver').textContent = 'v' + APP_VERSION;
+if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) navigator.serviceWorker.register('sw.js').catch(function () {});
+let installEvt = null;
+window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); installEvt = e; var b = document.getElementById('installBtn'); if (b) b.hidden = false; });
+window.addEventListener('appinstalled', function () { installEvt = null; var b = document.getElementById('installBtn'); if (b) b.hidden = true; });
+
+</script>
+
+<script>document.getElementById('installBtn').addEventListener('click',function(){if(!installEvt)return;installEvt.prompt();installEvt.userChoice.finally(function(){installEvt=null;document.getElementById('installBtn').hidden=true})});</script>
+</body></html>
