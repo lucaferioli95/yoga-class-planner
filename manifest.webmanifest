@@ -2,7 +2,7 @@
   "name": "Yoga Class Builder (WIP)",
   "short_name": "Yoga WIP",
   "description": "Plan yoga classes from a library of drawn poses. Work in progress.",
-  "id": "/yoga-class-planner/",
+  "id": "/",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
