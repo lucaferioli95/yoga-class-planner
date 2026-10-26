@@ -2,6 +2,9 @@
 
 All notable changes to the Yoga Class Builder, newest first. The version number is also shown in the app header.
 
+## Unreleased
+- Added a Cloudflare deploy configuration (wrangler.jsonc) so the app can be hosted on Cloudflare as well as GitHub Pages. No change to the app itself.
+
 ## 0.1.1 - 2026-10-26 (work in progress)
 - Gave the app a fixed identity in its manifest (id and start address) so browsers do not confuse it with an earlier or stale install.
 
