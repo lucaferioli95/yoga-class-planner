@@ -3,7 +3,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icon-180.png">
-<meta name="theme-color" content="#1B6A57">
+<meta name="theme-color" content="#A84A62">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Yoga WIP"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,35 +12,36 @@
 <style>
 /* Layout: library of drawn poses on the left, the class sequence on the right; on phones one pane at a time behind a bottom tab bar. */
 :root {
-  --bg: #F0F3EF; --surface: #FFFFFF; --surface2: #F5F7F4; --ink: #1A2420; --ink2: #51605A; --ink3: #7C8A84;
-  --line: #DCE3DD; --line2: #C6D1CA;
-  --accent: #1B6A57; --accent-ink: #FFFFFF; --accent-soft: #DCEEE7; --accent-line: #A9D2C4;
-  --warn: #8F5509; --warn-soft: #F8EBD3; --danger: #AE352B; --danger-soft: #F8E0DD;
-  --fig: #1B6A57; --fig-far: #94C1B3; --ground: #C9D3CC;
-  --c0: #2F7F6B; --c1: #5C64B8; --c2: #C0861F; --c3: #C75E58; --c4: #8C5DA8; --c5: #4A87AA;
+  color-scheme: light;
+  --bg: #F6EDE4; --surface: #FFFAF5; --surface2: #F1E4D8; --ink: #3B2A25; --ink2: #6B564E; --ink3: #8F7B72;
+  --line: #E4D3C5; --line2: #D1BAA9;
+  --accent: #A84A62; --accent-ink: #FFFFFF; --accent-soft: #F6DDE2; --accent-line: #E2AFBC;
+  --warn: #86581C; --warn-soft: #F5E4C9; --danger: #A8342F; --danger-soft: #F7DDD9;
+  --fig: #7A4A44; --fig-far: #D8B4A8; --ground: #E0CFC1;
+  --c0: #B5586F; --c1: #8B5E3C; --c2: #C9954F; --c3: #D98A7A; --c4: #8E5B7A; --c5: #A39078;
+  --scrim: rgba(46, 26, 20, .5);
   --font-d: 'Bricolage Grotesque', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-b: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --scrim: rgba(12, 20, 17, .5);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #101513; --surface: #1A221F; --surface2: #151C19; --ink: #E7EFEB; --ink2: #A5B4AD; --ink3: #77867F;
-    --line: #2B3732; --line2: #3A4943;
-    --accent: #5CC3A4; --accent-ink: #0B1E18; --accent-soft: #1F3A31; --accent-line: #2F5A4C;
-    --warn: #E4AA5B; --warn-soft: #3A2E17; --danger: #EE7F76; --danger-soft: #3F211E;
-    --fig: #62CBAB; --fig-far: #3C6D5F; --ground: #34423C;
-    --c0: #4CB59A; --c1: #8D95E6; --c2: #E0A94A; --c3: #E58882; --c4: #BC8DD6; --c5: #6DB5DB;
-    --scrim: rgba(0, 0, 0, .6);
+  --bg: #1F1614; --surface: #2A1E1B; --surface2: #241A17; --ink: #F3E7DF; --ink2: #C6B2A7; --ink3: #968278;
+  --line: #3B2B27; --line2: #4D3A34;
+  --accent: #E58AA3; --accent-ink: #2A1018; --accent-soft: #47262F; --accent-line: #6B3B49;
+  --warn: #E4B069; --warn-soft: #3A2C17; --danger: #F08A80; --danger-soft: #452522;
+  --fig: #E89AAE; --fig-far: #7A4A55; --ground: #43322D;
+  --c0: #E58AA3; --c1: #C79A72; --c2: #E3B76A; --c3: #F0A090; --c4: #C08AAE; --c5: #B5A08C;
+  --scrim: rgba(0, 0, 0, .6);
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #101513; --surface: #1A221F; --surface2: #151C19; --ink: #E7EFEB; --ink2: #A5B4AD; --ink3: #77867F;
-  --line: #2B3732; --line2: #3A4943;
-  --accent: #5CC3A4; --accent-ink: #0B1E18; --accent-soft: #1F3A31; --accent-line: #2F5A4C;
-  --warn: #E4AA5B; --warn-soft: #3A2E17; --danger: #EE7F76; --danger-soft: #3F211E;
-  --fig: #62CBAB; --fig-far: #3C6D5F; --ground: #34423C;
-  --c0: #4CB59A; --c1: #8D95E6; --c2: #E0A94A; --c3: #E58882; --c4: #BC8DD6; --c5: #6DB5DB;
+  --bg: #1F1614; --surface: #2A1E1B; --surface2: #241A17; --ink: #F3E7DF; --ink2: #C6B2A7; --ink3: #968278;
+  --line: #3B2B27; --line2: #4D3A34;
+  --accent: #E58AA3; --accent-ink: #2A1018; --accent-soft: #47262F; --accent-line: #6B3B49;
+  --warn: #E4B069; --warn-soft: #3A2C17; --danger: #F08A80; --danger-soft: #452522;
+  --fig: #E89AAE; --fig-far: #7A4A55; --ground: #43322D;
+  --c0: #E58AA3; --c1: #C79A72; --c2: #E3B76A; --c3: #F0A090; --c4: #C08AAE; --c5: #B5A08C;
   --scrim: rgba(0, 0, 0, .6);
   color-scheme: dark;
 }
@@ -343,6 +344,8 @@ svg .hd { fill: var(--fig); }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
 
+.clsbar { display: flex; gap: 8px; align-items: center; margin: 12px 0 10px; }
+#clsSwitch { flex: 1; min-width: 0; padding: 9px 10px; border: 1px solid var(--line2); border-radius: 10px; background: var(--surface); color: var(--ink); font-weight: 600; }
 </style>
 <div class="app" id="app" data-view="class">
   <header class="top">
@@ -367,6 +370,7 @@ svg .hd { fill: var(--fig); }
     </section>
     <section class="pane main" id="main" aria-label="Class">
       <div id="classView">
+        <div class="clsbar"><select id="clsSwitch" aria-label="Switch class"></select><button class="btn primary sm" type="button" data-act="new"><span data-ic="plus"></span>New class</button></div>
         <div class="card head">
           <input id="clsTitle" type="text" placeholder="Class name" aria-label="Class name" maxlength="80">
           <div class="meta">
@@ -1019,6 +1023,9 @@ const TEMPLATES = [
   function setClassFields() {
     const c = cur();
     $('#clsTitle').value = c.title; $('#clsFocus').value = c.focus || '';
+    const sw = $('#clsSwitch');
+    sw.innerHTML = S.classes.slice().sort((x, y) => y.updated - x.updated).map(x => '<option value="' + x.id + '"' + (x.id === S.curId ? ' selected' : '') + '>' + esc(x.title || 'Untitled class') + '</option>').join('');
+    sw.disabled = S.classes.length < 2;
   }
 
   /* ---------- rendering: saved ---------- */
@@ -1120,7 +1127,7 @@ const TEMPLATES = [
     let y = M;
     const need = h => { if (y + h > H - 16) { doc.addPage(); y = M; } };
     const wrap = (s, w) => doc.splitTextToSize(latin(s), w);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(20); doc.setTextColor(23, 37, 42);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(20); doc.setTextColor(59, 42, 37);
     const tl = wrap(c.title || 'Untitled class', W - 2 * M);
     doc.text(tl, M, y + 6); y += 6 + (tl.length - 1) * 8;
     doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(95, 107, 110);
@@ -1131,7 +1138,7 @@ const TEMPLATES = [
     c.items.forEach(it => {
       if (it.k === 'section') {
         need(22); y += 3;
-        doc.setFillColor(31, 111, 92); doc.rect(M, y, W - 2 * M, 7, 'F');
+        doc.setFillColor(168, 74, 98); doc.rect(M, y, W - 2 * M, 7, 'F');
         doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(255, 255, 255);
         doc.text(latin(it.t || 'Section').toUpperCase(), M + 3, y + 4.8); y += 10; return;
       }
@@ -1145,15 +1152,15 @@ const TEMPLATES = [
       if (p && imgs[it.p]) doc.addImage(imgs[it.p], 'JPEG', M + 8, y + 1, 24, 18.9, it.p);
       doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(120, 130, 132);
       doc.text(fmt(t), M, y + 5);
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(11.5); doc.setTextColor(23, 37, 42);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(11.5); doc.setTextColor(59, 42, 37);
       doc.text(latin(p ? p.name : (it.t || 'Custom step')), p ? TX + 4 : M + 8, y + 5);
       const x0 = p ? TX + 4 : M + 8;
       let yy = y + 5;
       if (p) { doc.setFont('helvetica', 'italic'); doc.setFontSize(9); doc.setTextColor(95, 107, 110); yy += 4.5; doc.text(latin(p.sk), x0, yy); }
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(31, 111, 92); yy += 4.6; doc.text(latin(hold), x0, yy);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(168, 74, 98); yy += 4.6; doc.text(latin(hold), x0, yy);
       doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(80, 92, 95);
       cues.forEach(l => { yy += 4; doc.text(l, x0, yy); });
-      doc.setFont('helvetica', 'italic'); doc.setTextColor(23, 37, 42);
+      doc.setFont('helvetica', 'italic'); doc.setTextColor(59, 42, 37);
       note.forEach(l => { yy += 4.2; doc.text(l, x0, yy); });
       y += h + 2; t += itemSecs(it);
     });
@@ -1162,7 +1169,7 @@ const TEMPLATES = [
     const keys = Object.keys(load);
     if (keys.length) {
       need(20); y += 4;
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(23, 37, 42); doc.text('Offer options for students with', M, y); y += 5;
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(59, 42, 37); doc.text('Offer options for students with', M, y); y += 5;
       doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(80, 92, 95);
       keys.sort((a, b) => load[b].length - load[a].length).forEach(k => {
         const names = Array.from(new Set(load[k]));
@@ -1378,7 +1385,7 @@ const TEMPLATES = [
 
   function onInput(e) {
     const t = e.target, act = t.dataset && t.dataset.act, c = cur();
-    if (t.id === 'clsTitle') { c.title = t.value; touch(); return; }
+    if (t.id === 'clsTitle') { c.title = t.value; touch(); const o = $('#clsSwitch option:checked'); if (o) o.textContent = t.value || 'Untitled class'; return; }
     if (t.id === 'clsFocus') { c.focus = t.value; touch(); return; }
     if (t.id === 'search') { S.q = t.value.trim(); renderLib(); return; }
     if (!act) return;
@@ -1389,6 +1396,7 @@ const TEMPLATES = [
   }
   function onChange(e) {
     const t = e.target, act = t.dataset && t.dataset.act, c = cur();
+    if (t.id === 'clsSwitch') { S.curId = t.value; S.open = null; saveUi(); renderAll(); window.scrollTo({ top: 0 }); return; }
     if (t.id === 'clsTarget') { c.target = +t.value; touch(); renderClass(); return; }
     if (t.id === 'lvlSel') { S.lvl = +t.value; saveUi(); renderLib(); return; }
     if (!act) return;
@@ -1426,7 +1434,7 @@ const TEMPLATES = [
   boot();
 })();
 
-const APP_VERSION = '0.1.4';
+const APP_VERSION = '0.2.0';
 document.getElementById('ver').textContent = 'v' + APP_VERSION;
 if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) navigator.serviceWorker.register('sw.js').catch(function () {});
 

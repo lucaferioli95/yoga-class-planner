@@ -2,6 +2,10 @@
 
 All notable changes to the Yoga Class Builder, newest first. The version number is also shown in the app header.
 
+## 0.2.0 - 2026-10-27 (work in progress)
+- Several classes are now easy to find and use: a class switcher and a "New class" button sit at the top of the Class view (the "My classes" tab is still there to open, duplicate or delete).
+- New look: a pink, beige and brown palette for the app, the pose figures, the printed PDF and the app icon, in light and dark mode.
+
 ## 0.1.4 - 2026-10-27 (work in progress)
 - Small note next to the version showing where the app is hosted (Cloudflare or GitHub Pages), so you can tell the copies apart.
 
