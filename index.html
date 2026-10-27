@@ -344,13 +344,14 @@ svg .hd { fill: var(--fig); }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
 
+.hbtns { display: flex; gap: 8px; flex-wrap: wrap; }
 .clsbar { display: flex; gap: 8px; align-items: center; margin: 12px 0 10px; }
 #clsSwitch { flex: 1; min-width: 0; padding: 9px 10px; border: 1px solid var(--line2); border-radius: 10px; background: var(--surface); color: var(--ink); font-weight: 600; }
 </style>
 <div class="app" id="app" data-view="class">
   <header class="top">
     <div class="brand"><h1>Class builder</h1><span class="wip" title="Work in progress">WIP</span><span class="ver" id="ver"></span><span class="ver" id="hostNote"></span><span id="saveState" class="ss"></span></div>
-    <button type="button" class="btn sm" id="installBtn">Install app</button>
+    <span class="hbtns"><button type="button" class="btn sm" id="syncBtn" hidden>Sign in to sync</button><button type="button" class="btn sm" id="installBtn">Install app</button></span>
     <nav id="tabs" class="tabs" aria-label="Sections">
       <button type="button" data-view="lib" class="only-m"><span data-ic="grid"></span>Poses</button>
       <button type="button" data-view="class"><span data-ic="list"></span>Class <span id="tabBadge"></span></button>
@@ -402,6 +403,7 @@ svg .hd { fill: var(--fig); }
 <div id="sheet" hidden></div>
 <div id="teach" hidden></div>
 <div id="toast" role="status" aria-live="polite"></div>
+<script src="supabase.js"></script>
 <script src="jspdf.min.js"></script>
 <script>
 const YogaFig = (() => {
@@ -749,7 +751,7 @@ const TEMPLATES = [
   function setSync(m) { S.sync = m; renderSaveState(); }
   function renderSaveState() {
     const el = $('#saveState'); if (!el) return;
-    const map = { cloud: 'Saved to your account', local: 'Saved on this device', error: 'Sync problem, saved on this device' };
+    const map = { cloud: 'Synced to your account', local: 'Saved on this device', error: 'Sync problem, saved on this device' };
     el.textContent = map[S.sync] || '';
     el.dataset.state = S.sync;
   }
@@ -768,13 +770,45 @@ const TEMPLATES = [
     cloud.busy[id] = false;
     if (cloud.dirty[id]) { cloud.dirty[id] = false; flush(id); }
   }
+  /* Sync through Supabase (same project and Google login as the Control Room). Works without signing in; signing in adds sync. */
+  const SB_URL = 'https://jsddqdmaatosqvbdrzjo.supabase.co';
+  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzZGRxZG1hYXRvc3F2YmRyempvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0OTkwMTEsImV4cCI6MjEwMzA3NTAxMX0.sHI2j5w3xjRJhkD9EUqU2l1ZxgW164DqyIdEyGGgAXs'; /* public anon key: safe to publish, access is limited by row-level security */
+  let sb = null;
+  function supaColl(uid) {
+    return {
+      doc(id) {
+        return {
+          set: async d => { const r = await sb.from('yoga_classes').upsert({ user_id: uid, id: id, data: d, updated: d.updated || 0 }); if (r.error) throw r.error; },
+          delete: async () => { const r = await sb.from('yoga_classes').delete().eq('user_id', uid).eq('id', id); if (r.error) throw r.error; }
+        };
+      },
+      onSnapshot(cb, errCb) {
+        const load = async () => {
+          const r = await sb.from('yoga_classes').select('id,data').eq('user_id', uid);
+          if (r.error) { errCb(r.error); return; }
+          cb({ docs: r.data.map(x => ({ id: x.id, data: () => x.data })) });
+        };
+        load();
+        sb.channel('yoga-' + uid).on('postgres_changes', { event: '*', schema: 'public', table: 'yoga_classes', filter: 'user_id=eq.' + uid }, load).subscribe();
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) load(); });
+        window.addEventListener('online', load);
+      }
+    };
+  }
+  function syncBtn(signedIn) {
+    const b = $('#syncBtn'); if (!b) return;
+    b.hidden = false; b.textContent = signedIn ? 'Sign out' : 'Sign in to sync'; b.dataset.in = signedIn ? '1' : '';
+  }
   async function initCloud() {
     try {
-      if (!window.claude || !window.claude.use) return;
-      const db = await window.claude.use('db'), user = await window.claude.use('user');
-      if (!db || !user) return;
-      const id = await user.id(); if (!id) return;
-      cloud.coll = db.collection('data/users/' + id);
+      if (!(window.supabase && window.supabase.createClient) || location.protocol.indexOf('http') !== 0) return;
+      sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, detectSessionInUrl: true, flowType: 'pkce' } });
+      const sess = (await sb.auth.getSession()).data.session;
+      if (!sess) { syncBtn(false); return; }
+      const ok = await sb.rpc('is_control_room_member');
+      if (ok.error || ok.data !== true) { syncBtn(true); $('#saveState').textContent = 'This Google account is not allowed to sync'; return; }
+      syncBtn(true);
+      cloud.coll = supaColl(sess.user.id);
       cloud.coll.onSnapshot(snap => {
         let changed = false;
         const remote = new Set();
@@ -796,9 +830,13 @@ const TEMPLATES = [
         if (changed) { saveLocal(); renderAll(); }
         setSync('cloud');
       }, () => setSync('error'));
-      setSync('cloud');
     } catch (e) { /* stay local */ }
   }
+  document.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('#syncBtn'); if (!b || !sb) return;
+    if (b.dataset.in) sb.auth.signOut().then(() => location.reload());
+    else sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } });
+  });
   function cleanClass(x, id) {
     return {
       id: id || x.id, title: String(x.title || ''), focus: String(x.focus || ''), target: +x.target || 60,
@@ -1434,7 +1472,7 @@ const TEMPLATES = [
   boot();
 })();
 
-const APP_VERSION = '0.2.0';
+const APP_VERSION = '0.3.0';
 document.getElementById('ver').textContent = 'v' + APP_VERSION;
 if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) navigator.serviceWorker.register('sw.js').catch(function () {});
 
