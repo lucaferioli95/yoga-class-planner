@@ -347,7 +347,7 @@ svg .hd { fill: var(--fig); }
 <div class="app" id="app" data-view="class">
   <header class="top">
     <div class="brand"><h1>Class builder</h1><span class="wip" title="Work in progress">WIP</span><span class="ver" id="ver"></span><span id="saveState" class="ss"></span></div>
-    <button type="button" class="btn sm" id="installBtn" hidden>Install app</button>
+    <button type="button" class="btn sm" id="installBtn">Install app</button>
     <nav id="tabs" class="tabs" aria-label="Sections">
       <button type="button" data-view="lib" class="only-m"><span data-ic="grid"></span>Poses</button>
       <button type="button" data-view="class"><span data-ic="list"></span>Class <span id="tabBadge"></span></button>
@@ -1426,14 +1426,11 @@ const TEMPLATES = [
   boot();
 })();
 
-const APP_VERSION = '0.1.2';
+const APP_VERSION = '0.1.3';
 document.getElementById('ver').textContent = 'v' + APP_VERSION;
 if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) navigator.serviceWorker.register('sw.js').catch(function () {});
-let installEvt = null;
-window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); installEvt = e; var b = document.getElementById('installBtn'); if (b) b.hidden = false; });
-window.addEventListener('appinstalled', function () { installEvt = null; var b = document.getElementById('installBtn'); if (b) b.hidden = true; });
 
 </script>
 
-<script>document.getElementById('installBtn').addEventListener('click',function(){if(!installEvt)return;installEvt.prompt();installEvt.userChoice.finally(function(){installEvt=null;document.getElementById('installBtn').hidden=true})});</script>
+<script src="install.js"></script>
 </body></html>
