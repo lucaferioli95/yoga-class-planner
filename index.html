@@ -4,6 +4,7 @@
 <link rel="icon" href="icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icon-180.png">
 <meta name="theme-color" content="#A84A62">
+<script>try{var t=localStorage.getItem("yoga-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Yoga WIP"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -63,7 +64,7 @@ button { cursor: pointer; }
 
 /* header */
 .top {
-  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--bg);
+  position: static; z-index: 20; background: var(--bg);
   display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0 10px; flex-wrap: wrap;
 }
 .brand { display: flex; align-items: baseline; gap: 12px; min-width: 0; flex-wrap: wrap; }
@@ -187,7 +188,7 @@ svg .hd { fill: var(--fig); }
 }
 .items-head { display: flex; align-items: baseline; justify-content: space-between; margin: 18px 0 8px; }
 .items-head h2 { font-size: 17px; }
-#items { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+#items { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
 .it { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
 .it.open { border-color: var(--accent-line); }
 .row {
@@ -328,7 +329,7 @@ svg .hd { fill: var(--fig); }
 
 @media (min-width: 980px) {
   body { padding-block: 0 48px; }
-  .top { padding: 16px 0 14px; }
+  .top { padding: 16px 0 14px; position: sticky; top: env(safe-area-inset-top, 0px); }
   .tabs { position: static; padding: 0; background: none; border: 0; gap: 4px; }
   .tabs button { flex-direction: row; gap: 8px; padding: 0 14px; min-height: 40px; font-size: 14px; }
   .only-m { display: none !important; }
@@ -345,13 +346,23 @@ svg .hd { fill: var(--fig); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
 
 .hbtns { display: flex; gap: 8px; flex-wrap: wrap; }
+.it { position: relative; }
+.it .row { padding-left: 30px; }
+.dh { position: absolute; left: 0; top: 0; width: 28px; height: 60px; display: grid; place-items: center; color: var(--ink3); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.dh:hover { color: var(--ink); }
+.sec .dh { position: static; width: 26px; height: 34px; flex: none; }
+.dragging { position: relative; z-index: 20; box-shadow: 0 8px 24px rgba(0,0,0,.28); opacity: .96; pointer-events: none; }
+.dragging .dh { cursor: grabbing; }
+.dt-before { box-shadow: 0 -4px 0 -1px var(--accent); }
+.dt-after { box-shadow: 0 4px 0 -1px var(--accent); }
+body.dnd { user-select: none; -webkit-user-select: none; }
 .clsbar { display: flex; gap: 8px; align-items: center; margin: 12px 0 10px; }
 #clsSwitch { flex: 1; min-width: 0; padding: 9px 10px; border: 1px solid var(--line2); border-radius: 10px; background: var(--surface); color: var(--ink); font-weight: 600; }
 </style>
 <div class="app" id="app" data-view="class">
   <header class="top">
     <div class="brand"><h1>Class builder</h1><span class="wip" title="Work in progress">WIP</span><span class="ver" id="ver"></span><span class="ver" id="hostNote"></span><span id="saveState" class="ss"></span></div>
-    <span class="hbtns"><button type="button" class="btn sm" id="syncBtn" hidden>Sign in to sync</button><button type="button" class="btn sm" id="installBtn">Install app</button></span>
+    <span class="hbtns"><button type="button" class="btn sm" id="themeBtn" aria-label="Change colour theme">Theme: Auto</button><button type="button" class="btn sm" id="syncBtn" hidden>Sign in to sync</button><button type="button" class="btn sm" id="installBtn">Install app</button></span>
     <nav id="tabs" class="tabs" aria-label="Sections">
       <button type="button" data-view="lib" class="only-m"><span data-ic="grid"></span>Poses</button>
       <button type="button" data-view="class"><span data-ic="list"></span>Class <span id="tabBadge"></span></button>
@@ -1023,7 +1034,7 @@ const TEMPLATES = [
         const mv = '<button class="ib" data-act="up" data-u="' + it.u + '" aria-label="Move up"' + (first ? ' disabled' : '') + '>' + ic('up') + '</button>' +
           '<button class="ib" data-act="down" data-u="' + it.u + '" aria-label="Move down"' + (last ? ' disabled' : '') + '>' + ic('down') + '</button>';
         if (it.k === 'section') {
-          html += '<li class="sec" data-u="' + it.u + '"><input class="sec-in" data-act="sec" data-u="' + it.u + '" value="' + esc(it.t) + '" aria-label="Section name" maxlength="40">' +
+          html += '<li class="sec" data-u="' + it.u + '">' + '<span class="dh" aria-hidden="true" title="Drag to reorder"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><circle cx="9" cy="6" r="1.7"/><circle cx="15" cy="6" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="9" cy="18" r="1.7"/><circle cx="15" cy="18" r="1.7"/></svg></span>' + '<input class="sec-in" data-act="sec" data-u="' + it.u + '" value="' + esc(it.t) + '" aria-label="Section name" maxlength="40">' +
             '<span class="subt">' + fmt(subtotals[it.u] || 0) + '</span>' + mv +
             '<button class="ib" data-act="del" data-u="' + it.u + '" aria-label="Remove section">' + ic('x') + '</button></li>';
           return;
@@ -1033,7 +1044,7 @@ const TEMPLATES = [
         const secs = itemSecs(it);
         const sub = p ? esc(p.sk) : 'Custom step';
         const note = it.n ? '<span class="nt">' + esc(it.n) + '</span>' : '';
-        html += '<li class="it' + (open ? ' open' : '') + '" data-u="' + it.u + '">' +
+        html += '<li class="it' + (open ? ' open' : '') + '" data-u="' + it.u + '">' + '<span class="dh" aria-hidden="true" title="Drag to reorder"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><circle cx="9" cy="6" r="1.7"/><circle cx="15" cy="6" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="9" cy="18" r="1.7"/><circle cx="15" cy="18" r="1.7"/></svg></span>' +
           '<button class="row" data-act="toggle" data-u="' + it.u + '" aria-expanded="' + open + '">' +
           '<span class="n">' + idx + '</span>' +
           '<span class="th">' + (p ? fig(p.id) : '<span class="cust">' + ic('text', 22) + '</span>') + '</span>' +
@@ -1084,14 +1095,101 @@ const TEMPLATES = [
 
   function renderAll() { renderTabs(); renderLib(); setClassFields(); renderClass(); renderSaved(); renderSaveState(); }
 
+  /* ---------- back button: step back through screens instead of leaving the app ---------- */
+  const NAV = []; let ignorePop = 0, pendBack = 0;
+  function navPush(l) { NAV.push(l); try { history.pushState({ nav: NAV.length }, ''); } catch (e) { /* ignore */ } }
+  function navPopProg(kind) {
+    const top = NAV[NAV.length - 1];
+    if (!top) return;
+    if (top.kind !== kind) { const l = NAV.slice().reverse().find(x => x.kind === kind && !x.dead); if (l) l.dead = true; return; }
+    NAV.pop(); pendBack++;
+    if (pendBack === 1) Promise.resolve().then(() => { const n = pendBack; pendBack = 0; ignorePop++; try { history.go(-n); } catch (e) { ignorePop--; } });
+  }
+  function setView(v) {
+    if (S.view === v) return;
+    const top = NAV[NAV.length - 1];
+    if (top && top.kind === 'view' && top.prev === v) navPopProg('view'); else navPush({ kind: 'view', prev: S.view });
+    S.view = v;
+  }
+  window.addEventListener('popstate', () => {
+    if (ignorePop > 0) { ignorePop--; return; }
+    const l = NAV.pop(); if (!l) return;
+    if (l.dead) { try { history.back(); } catch (e) { /* ignore */ } return; }
+    if (l.kind === 'sheet') closeSheet(true);
+    else if (l.kind === 'teach') closeTeach(true);
+    else if (l.kind === 'view') { S.view = l.prev; if (S.view === 'saved') renderSaved(); renderTabs(); window.scrollTo({ top: 0 }); }
+  });
+
+  /* ---------- drag to reorder ---------- */
+  let D = null;
+  function dragUpdate() {
+    if (!D) return;
+    D.li.style.transform = 'translateY(' + (D.y - D.startY + (window.scrollY - D.sy)) + 'px)';
+    const others = Array.from($('#items').children).filter(li => li.dataset.u && li !== D.li);
+    others.forEach(li => li.classList.remove('dt-before', 'dt-after'));
+    let to = 0;
+    others.forEach(li => { const r = li.getBoundingClientRect(); if (r.top + r.height / 2 < D.y) to++; });
+    D.to = to;
+    if (others.length) { if (to < others.length) others[to].classList.add('dt-before'); else others[others.length - 1].classList.add('dt-after'); }
+  }
+  function dragLoop() {
+    if (!D) return;
+    const edge = 90, bottomEdge = window.innerHeight - 110;
+    if (D.y < edge) window.scrollBy(0, -Math.ceil((edge - D.y) / 6));
+    else if (D.y > bottomEdge) window.scrollBy(0, Math.ceil((D.y - bottomEdge) / 6));
+    dragUpdate();
+    D.raf = requestAnimationFrame(dragLoop);
+  }
+  function dragEnd(commit) {
+    if (!D) return;
+    const d = D; D = null; cancelAnimationFrame(d.raf);
+    document.body.classList.remove('dnd');
+    Array.from($('#items').children).forEach(li => li.classList.remove('dt-before', 'dt-after', 'dragging'));
+    d.li.style.transform = '';
+    if (!commit || d.to == null) return;
+    const c = cur(); const i = c.items.findIndex(x => x.u === d.u);
+    if (i < 0 || i === d.to) return;
+    const it = c.items.splice(i, 1)[0]; c.items.splice(d.to, 0, it);
+    touch(); renderClass(); renderTabs();
+  }
+  document.addEventListener('pointerdown', e => {
+    const h = e.target.closest && e.target.closest('.dh'); if (!h || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    const li = h.closest('li'); if (!li || D) return;
+    e.preventDefault();
+    D = { u: li.dataset.u, li, id: e.pointerId, startY: e.clientY, y: e.clientY, to: null, raf: 0, sy: window.scrollY };
+    li.classList.add('dragging'); document.body.classList.add('dnd');
+    try { h.setPointerCapture(e.pointerId); } catch (x) { /* ignore */ }
+    D.raf = requestAnimationFrame(dragLoop);
+  });
+  document.addEventListener('pointermove', e => { if (D && e.pointerId === D.id) { e.preventDefault(); D.y = e.clientY; } }, { passive: false });
+  document.addEventListener('pointerup', e => { if (D && e.pointerId === D.id) dragEnd(true); });
+  document.addEventListener('pointercancel', e => { if (D && e.pointerId === D.id) dragEnd(false); });
+
+  /* ---------- colour theme: auto / light / dark ---------- */
+  function applyTheme(t) {
+    const root = document.documentElement;
+    if (t === 'light' || t === 'dark') root.dataset.theme = t; else delete root.dataset.theme;
+    const b = $('#themeBtn'); if (b) b.textContent = 'Theme: ' + (t === 'light' ? 'Light' : t === 'dark' ? 'Dark' : 'Auto');
+    const dark = t === 'dark' || (t !== 'light' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+    const m = document.querySelector('meta[name=theme-color]'); if (m) m.setAttribute('content', dark ? '#2A1E1B' : '#A84A62');
+  }
+  let themePref = 'auto';
+  try { themePref = localStorage.getItem('yoga-theme') || 'auto'; } catch (e) { /* ignore */ }
+  document.addEventListener('click', e => {
+    if (!(e.target.closest && e.target.closest('#themeBtn'))) return;
+    themePref = themePref === 'auto' ? 'light' : themePref === 'light' ? 'dark' : 'auto';
+    try { localStorage.setItem('yoga-theme', themePref); } catch (x) { /* ignore */ }
+    applyTheme(themePref);
+  });
+
   /* ---------- sheets ---------- */
   function openSheet(html, cls) {
-    const el = $('#sheet');
+    const el = $('#sheet'); if (el.hidden) navPush({ kind: 'sheet' });
     el.innerHTML = '<div class="sheet ' + (cls || '') + '" role="dialog" aria-modal="true">' + html + '</div>';
     el.hidden = false; document.body.classList.add('lock');
     const f = el.querySelector('[data-focus]') || el.querySelector('button'); if (f) f.focus();
   }
-  function closeSheet() { const el = $('#sheet'); el.hidden = true; el.innerHTML = ''; document.body.classList.remove('lock'); }
+  function closeSheet(fromPop) { const el = $('#sheet'); if (el.hidden) return; el.hidden = true; el.innerHTML = ''; document.body.classList.remove('lock'); if (!fromPop) navPopProg('sheet'); }
 
   function openDetail(id) {
     const p = POSE[id]; const ci = catIdx(p.cat);
@@ -1265,14 +1363,16 @@ const TEMPLATES = [
     const steps = buildSteps(cur());
     if (!steps.length) { toast('Add a few poses first'); return; }
     T = { steps, i: 0, left: steps[0].secs, running: false, endAt: 0, timer: null, done: false };
-    $('#teach').hidden = false; document.body.classList.add('lock');
+    $('#teach').hidden = false; document.body.classList.add('lock'); navPush({ kind: 'teach' });
     renderTeach();
     try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(w => { wake = w; }).catch(() => { }); } catch (e) { /* optional */ }
   }
-  function closeTeach() {
+  function closeTeach(fromPop) {
+    const wasOpen = !!T;
     if (T && T.timer) clearInterval(T.timer);
     T = null; $('#teach').hidden = true; $('#teach').innerHTML = ''; document.body.classList.remove('lock');
     try { if (wake) wake.release(); } catch (e) { /* ignore */ } wake = null;
+    if (wasOpen && !fromPop) navPopProg('teach');
   }
   function remainingAll() { let r = T.left; for (let k = T.i + 1; k < T.steps.length; k++) r += T.steps[k].secs; return r; }
   function renderTeach() {
@@ -1332,7 +1432,7 @@ const TEMPLATES = [
   }
   function newClass(c) {
     S.classes.push(c); S.curId = c.id; S.open = null; saveUi(); saveLocal(); queuePush(c);
-    S.view = 'class'; renderAll(); window.scrollTo({ top: 0 });
+    setView('class'); renderAll(); window.scrollTo({ top: 0 });
   }
 
   function onClick(e) {
@@ -1404,8 +1504,8 @@ const TEMPLATES = [
       case 'tnext': tGo(T.i + 1); break;
       case 'tprev': tGo(T.i - 1); break;
       case 'trestart': T.done = false; tGo(0); break;
-      case 'goto': S.view = t.dataset.v; renderTabs(); window.scrollTo({ top: 0 }); break;
-      case 'open-class': S.curId = id; S.open = null; saveUi(); S.view = 'class'; renderAll(); window.scrollTo({ top: 0 }); break;
+      case 'goto': setView(t.dataset.v); renderTabs(); window.scrollTo({ top: 0 }); break;
+      case 'open-class': S.curId = id; S.open = null; saveUi(); setView('class'); renderAll(); window.scrollTo({ top: 0 }); break;
       case 'dup-class': { const src = S.classes.find(x => x.id === id); const cp = JSON.parse(JSON.stringify(src)); cp.id = 'c-' + uid() + uid(); cp.title = (src.title || 'Untitled class') + ' (copy)'; cp.items.forEach(i => { i.u = uid(); }); cp.created = cp.updated = Date.now(); newClass(cp); toast('Duplicated'); break; }
       case 'del-ask': S.confirmDel = id; renderSaved(); break;
       case 'del-no': S.confirmDel = null; renderSaved(); break;
@@ -1451,12 +1551,12 @@ const TEMPLATES = [
     if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('pc')) { e.preventDefault(); openDetail(e.target.dataset.id); }
     if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('sec-in')) e.target.blur();
   });
-  $$('#tabs [data-view]').forEach(b => b.addEventListener('click', () => { S.view = b.dataset.view; if (S.view === 'saved') renderSaved(); renderTabs(); window.scrollTo({ top: 0 }); }));
+  $$('#tabs [data-view]').forEach(b => b.addEventListener('click', () => { setView(b.dataset.view); if (S.view === 'saved') renderSaved(); renderTabs(); window.scrollTo({ top: 0 }); }));
 
   /* ---------- boot ---------- */
   function boot() {
     $$('[data-ic]').forEach(el => { el.insertAdjacentHTML('afterbegin', ic(el.dataset.ic, 20)); });
-    loadUi();
+    loadUi(); applyTheme(themePref);
     let list = loadLocal();
     if (!list || !list.length) {
       const ex = fromTemplate(TEMPLATES[0]); ex.title = 'Example class: Gentle hatha';
@@ -1472,7 +1572,7 @@ const TEMPLATES = [
   boot();
 })();
 
-const APP_VERSION = '0.3.0';
+const APP_VERSION = '0.4.0';
 document.getElementById('ver').textContent = 'v' + APP_VERSION;
 if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) navigator.serviceWorker.register('sw.js').catch(function () {});
 

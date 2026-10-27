@@ -2,6 +2,13 @@
 
 All notable changes to the Yoga Class Builder, newest first. The version number is also shown in the app header.
 
+## 0.4.0 - 2026-10-27 (work in progress)
+- Colour theme button in the header: Auto (follows your phone), Light or Dark. Your choice is remembered on each device.
+- Drag and drop to reorder poses and sections in the class: hold the dotted handle on the left of an item and move it. The up and down buttons are still there.
+- Fixed the pose rows in the class running slightly off the right edge on phones, which cut off the times.
+- The page header scrolls away on phones instead of staying pinned, giving more room for the class.
+- The back button (or back swipe) now steps back through the app: it closes a pop-up or Teach mode first, then returns to the previous tab, instead of leaving the app. From the main Class screen it still leaves the app.
+
 ## 0.3.0 - 2026-10-27 (work in progress)
 - Classes now sync between your devices. Use "Sign in to sync" (Google, same login as the Control Room). Changes appear on your other devices within a moment, and offline changes sync when you are back online. Without signing in the app still works and saves on the device.
 - The first time you sign in on a device, its classes are uploaded and the ones from your other devices are downloaded, so you may see a second "Example class" to delete.
