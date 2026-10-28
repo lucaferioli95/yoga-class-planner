@@ -2,6 +2,10 @@
 
 All notable changes to the Yoga Class Builder, newest first. The version number is also shown in the app header.
 
+## 0.5.0 - 2026-10-28 (work in progress)
+- You can now edit any pose card: open a pose, tap "Edit pose", and change its name, Sanskrit name, category, level, hold time, both sides, body areas, benefits, cues and cautions. "Reset to original" brings the built-in text back.
+- Your pose edits sync between your devices when you are signed in.
+
 ## 0.4.0 - 2026-10-27 (work in progress)
 - Colour theme button in the header: Auto (follows your phone), Light or Dark. Your choice is remembered on each device.
 - Drag and drop to reorder poses and sections in the class: hold the dotted handle on the left of an item and move it. The up and down buttons are still there.

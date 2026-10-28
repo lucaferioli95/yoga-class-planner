@@ -356,6 +356,10 @@ svg .hd { fill: var(--fig); }
 .dt-before { box-shadow: 0 -4px 0 -1px var(--accent); }
 .dt-after { box-shadow: 0 4px 0 -1px var(--accent); }
 body.dnd { user-select: none; -webkit-user-select: none; }
+.pe { display: grid; gap: 12px; margin: 12px 0 4px; }
+.pe-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: end; }
+.pe select { width: 100%; padding: 9px 10px; border: 1px solid var(--line2); border-radius: 10px; background: var(--surface); color: var(--ink); }
+.pe input[type="number"], .pe input:not([type]), .pe textarea { width: 100%; }
 .clsbar { display: flex; gap: 8px; align-items: center; margin: 12px 0 10px; }
 #clsSwitch { flex: 1; min-width: 0; padding: 9px 10px; border: 1px solid var(--line2); border-radius: 10px; background: var(--surface); color: var(--ink); font-weight: 600; }
 </style>
@@ -673,6 +677,25 @@ const POSES = RAW.map(r => ({ id: r[0], name: r[1], sk: r[2], cat: CATS[r[3]], l
 const POSE = {};
 POSES.forEach(p => { POSE[p.id] = p; });
 
+/* Your own edits to the pose cards. The built-in text stays in BASE so a pose can be reset. */
+const figCache = {};
+const K_POSE = 'yoga-poses-v1';
+const BASE = {};
+POSES.forEach(p => { BASE[p.id] = JSON.parse(JSON.stringify(p)); });
+const EDITABLE = ['name', 'sk', 'cat', 'lvl', 'sides', 'dur', 'focus', 'ben', 'cues', 'avoid'];
+let OV = {}, ovUpdated = 0;
+function applyPose(id) {
+  const b = BASE[id], o = OV[id], p = POSE[id]; if (!b || !p) return;
+  EDITABLE.forEach(k => { p[k] = JSON.parse(JSON.stringify(o && k in o ? o[k] : b[k])); });
+  delete figCache[id];
+}
+function applyAllPoses() { Object.keys(BASE).forEach(applyPose); }
+try {
+  const r = JSON.parse(localStorage.getItem(K_POSE) || 'null');
+  if (r && r.o && typeof r.o === 'object') { OV = r.o; ovUpdated = r.updated || 0; }
+} catch (e) { /* storage unavailable */ }
+applyAllPoses();
+
 // templates: ['#', section name] or [pose id, seconds per side] (both sides follows the pose default)
 const TEMPLATES = [
   { id: 'gentle', name: 'Gentle hatha', blurb: 'Slow standing work, simple floor poses, long rest.', items: [
@@ -734,7 +757,6 @@ const TEMPLATES = [
   };
   const ic = (n, s) => '<svg class="ic" viewBox="0 0 24 24" width="' + (s || 18) + '" height="' + (s || 18) + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[n] + '</svg>';
 
-  const figCache = {};
   const fig = id => figCache[id] || (figCache[id] = YogaFig.svg(SHAPES[id], { label: POSE[id].name + ' pose' }));
   const catIdx = c => CATS.indexOf(c);
 
@@ -758,7 +780,16 @@ const TEMPLATES = [
   }
   function saveUi() { try { localStorage.setItem(K_UI, JSON.stringify({ lvl: S.lvl, avoid: S.avoid, cur: S.curId })); } catch (e) { /* ignore */ } }
 
-  const cloud = { coll: null, t: {}, busy: {}, dirty: {}, known: null };
+  const cloud = { coll: null, t: {}, busy: {}, dirty: {}, known: null, pt: 0 };
+  function saveOv() {
+    try { localStorage.setItem(K_POSE, JSON.stringify({ o: OV, updated: ovUpdated })); } catch (e) { /* ignore */ }
+    queuePoses();
+  }
+  function queuePoses() {
+    if (!cloud.coll) return;
+    clearTimeout(cloud.pt);
+    cloud.pt = setTimeout(() => { cloud.coll.doc('poses').set({ kind: 'poses', o: OV, updated: ovUpdated }).then(() => setSync('cloud'), () => setSync('error')); }, 900);
+  }
   function setSync(m) { S.sync = m; renderSaveState(); }
   function renderSaveState() {
     const el = $('#saveState'); if (!el) return;
@@ -823,14 +854,26 @@ const TEMPLATES = [
       cloud.coll.onSnapshot(snap => {
         let changed = false;
         const remote = new Set();
+        let sawPoses = false;
         snap.docs.forEach(d => {
-          const x = d.data(); if (!x || x.kind !== 'class') return;
+          const x = d.data();
+          if (x && x.kind === 'poses') {
+            sawPoses = true;
+            if ((x.updated || 0) > ovUpdated) {
+              OV = x.o && typeof x.o === 'object' ? x.o : {}; ovUpdated = x.updated || 0;
+              try { localStorage.setItem(K_POSE, JSON.stringify({ o: OV, updated: ovUpdated })); } catch (e) { /* ignore */ }
+              applyAllPoses(); changed = true;
+            }
+            return;
+          }
+          if (!x || x.kind !== 'class') return;
           remote.add(d.id);
           const loc = S.classes.find(c => c.id === d.id);
           if (!loc) { S.classes.push(cleanClass(x, d.id)); changed = true; }
           else if ((x.updated || 0) > (loc.updated || 0)) { Object.assign(loc, cleanClass(x, d.id)); changed = true; }
         });
         if (cloud.known === null) {
+          if (!sawPoses && ovUpdated) queuePoses();
           S.classes.forEach(c => { if (!remote.has(c.id)) queuePush(c); });
         } else {
           S.classes = S.classes.filter(c => { const gone = cloud.known.has(c.id) && !remote.has(c.id); if (gone) changed = true; return !gone; });
@@ -1203,8 +1246,51 @@ const TEMPLATES = [
       '<p>' + esc(p.ben) + '</p><h4>Cues</h4><ul class="cues">' + p.cues.map(c => '<li>' + esc(c) + '</li>').join('') + '</ul>' +
       (p.avoid.length ? '<h4>Take care with</h4><p class="tags">' + p.avoid.map(a => '<span class="tag warn">' + esc(a) + '</span>').join('') + '</p>' : '') +
       (cp ? '<h4>Counter-pose</h4><p class="minor">Follow this with ' + esc(POSE[cp].name) + ' or another forward fold.</p>' : '') +
+      (OV[id] ? '<p class="minor">You have edited this pose card.</p>' : '') +
       '<div class="sheet-act"><button class="btn primary" data-act="add-close" data-id="' + id + '" data-focus>Add to class</button>' +
+      '<button class="btn" data-act="pose-edit" data-id="' + id + '">Edit pose</button>' +
       (cp ? '<button class="btn" data-act="add-counter" data-id="' + id + '">Add with ' + esc(POSE[cp].name) + '</button>' : '') + '</div>');
+  }
+
+  function openEditPose(id) {
+    const p = POSE[id];
+    openSheet('<button class="x" data-act="close" aria-label="Close">' + ic('x') + '</button><h2>Edit pose</h2>' +
+      '<p class="minor">Your changes are saved with your account and appear in the library and in new classes. Poses already in a class keep their own hold time.</p>' +
+      '<div class="pe">' +
+      '<label class="fld"><span>Name</span><input id="pe-name" value="' + esc(p.name) + '" maxlength="60"></label>' +
+      '<label class="fld"><span>Sanskrit name</span><input id="pe-sk" value="' + esc(p.sk) + '" maxlength="60"></label>' +
+      '<div class="pe-row"><label class="fld"><span>Category</span><select id="pe-cat">' + CATS.map(c => '<option' + (c === p.cat ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '</select></label>' +
+      '<label class="fld"><span>Level</span><select id="pe-lvl">' + [1, 2, 3].map(l => '<option value="' + l + '"' + (l === p.lvl ? ' selected' : '') + '>' + LEVELS[l] + '</option>').join('') + '</select></label></div>' +
+      '<div class="pe-row"><label class="fld"><span>Hold (seconds)</span><input id="pe-dur" type="number" min="10" max="1800" step="5" inputmode="numeric" value="' + p.dur + '"></label>' +
+      '<label class="tog"><input id="pe-sides" type="checkbox"' + (p.sides ? ' checked' : '') + '> Both sides</label></div>' +
+      '<label class="fld"><span>Body areas (separated by commas)</span><input id="pe-focus" value="' + esc(p.focus.join(', ')) + '"></label>' +
+      '<label class="fld"><span>Benefits</span><textarea id="pe-ben" rows="3">' + esc(p.ben) + '</textarea></label>' +
+      '<label class="fld"><span>Cues (one per line)</span><textarea id="pe-cues" rows="4">' + esc(p.cues.join('\n')) + '</textarea></label>' +
+      '<label class="fld"><span>Take care with (separated by commas)</span><input id="pe-avoid" value="' + esc(p.avoid.join(', ')) + '"></label>' +
+      '</div><div class="sheet-act"><button class="btn primary" data-act="pose-save" data-id="' + id + '">Save</button>' +
+      '<button class="btn" data-act="pose-cancel" data-id="' + id + '">Cancel</button>' +
+      (OV[id] ? '<button class="btn ghost" data-act="pose-reset" data-id="' + id + '">Reset to original</button>' : '') + '</div>');
+  }
+  function savePose(id) {
+    const g = k => $('#pe-' + k).value;
+    const list = v => v.split(',').map(x => x.trim()).filter(Boolean);
+    const name = g('name').trim(); if (!name) { toast('The pose needs a name'); return; }
+    const next = {
+      name: name, sk: g('sk').trim(), cat: g('cat'), lvl: +g('lvl') || 1, sides: $('#pe-sides').checked,
+      dur: Math.max(10, Math.min(1800, Math.round(+g('dur')) || BASE[id].dur)),
+      focus: list(g('focus')), ben: g('ben').trim(), cues: g('cues').split('\n').map(x => x.trim()).filter(Boolean), avoid: list(g('avoid'))
+    };
+    const o = {};
+    EDITABLE.forEach(k => { if (JSON.stringify(next[k]) !== JSON.stringify(BASE[id][k])) o[k] = next[k]; });
+    if (Object.keys(o).length) OV[id] = o; else delete OV[id];
+    ovUpdated = Date.now(); applyPose(id); saveOv();
+    renderLib(); renderClass(); setClassFields(); renderTabs();
+    openDetail(id); toast('Pose saved');
+  }
+  function resetPose(id) {
+    delete OV[id]; ovUpdated = Date.now(); applyPose(id); saveOv();
+    renderLib(); renderClass(); setClassFields(); renderTabs();
+    openDetail(id); toast('Pose reset to the original');
   }
 
   function openTemplates() {
@@ -1448,6 +1534,10 @@ const TEMPLATES = [
       case 'add-close': addPose(id); closeSheet(); break;
       case 'add-counter': addPose(id, null, true); addPose(counterFor(id), null, true); closeSheet(); toast('Added ' + POSE[id].name + ' and ' + POSE[counterFor(id)].name); break;
       case 'info': openDetail(id); break;
+      case 'pose-edit': openEditPose(id); break;
+      case 'pose-cancel': openDetail(id); break;
+      case 'pose-save': savePose(id); break;
+      case 'pose-reset': resetPose(id); break;
       case 'close': closeSheet(); break;
       case 'cat': S.cat = t.dataset.v; renderLib(); break;
       case 'avoid': { const v = t.dataset.v; S.avoid = S.avoid.includes(v) ? S.avoid.filter(x => x !== v) : S.avoid.concat(v); saveUi(); renderLib(); break; }
@@ -1572,7 +1662,7 @@ const TEMPLATES = [
   boot();
 })();
 
-const APP_VERSION = '0.4.0';
+const APP_VERSION = '0.5.0';
 document.getElementById('ver').textContent = 'v' + APP_VERSION;
 if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) navigator.serviceWorker.register('sw.js').catch(function () {});
 
