@@ -2,6 +2,9 @@
 
 All notable changes to the Yoga Class Builder, newest first. The version number is also shown in the app header.
 
+## 0.5.1 - 2026-10-30
+- Once the app is installed, the install button turns into "Uninstall app" and shows how to remove it (browsers do not let a web app remove itself, so it shows the steps).
+
 ## 0.5.0 - 2026-10-28 (work in progress)
 - You can now edit any pose card: open a pose, tap "Edit pose", and change its name, Sanskrit name, category, level, hold time, both sides, body areas, benefits, cues and cautions. "Reset to original" brings the built-in text back.
 - Your pose edits sync between your devices when you are signed in.
